@@ -1,8 +1,14 @@
-use diesel::{mysql::MysqlConnection, Connection, ConnectionError};
-use dotenvy::dotenv;
+use diesel::{
+    mysql::MysqlConnection,
+    r2d2::{ConnectionManager, Pool},
+    Connection, ConnectionError,
+};
 use std::env;
-pub fn establish_connection() -> Result<MysqlConnection, ConnectionError> {
-    dotenv().ok();
+pub fn establish_connection() -> Pool<ConnectionManager<MysqlConnection>> {
     let db_url = env::var("DATABASE_URL").expect("DB url must be set");
-    MysqlConnection::establish(&db_url) //.unwrap_or_else(|_| panic!("Error connecting to {}", db_url))
+    let manager = ConnectionManager::<MysqlConnection>::new(db_url);
+    Pool::builder()
+        .test_on_check_out(true)
+        .build(manager)
+        .expect("Could not build pool")
 }
