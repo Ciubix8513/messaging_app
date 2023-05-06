@@ -10,10 +10,8 @@ CREATE TABLE Users (
 CREATE TABLE Group_Chats (
     chat_id INT NOT NULL AUTO_INCREMENT,
     chat_name VARCHAR(128) NOT NULL,
-    created_by INT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (chat_id),
-    FOREIGN KEY (created_by) REFERENCES Users(user_id)
+    PRIMARY KEY (chat_id)
 );
 
 CREATE TABLE Group_Chat_Members (

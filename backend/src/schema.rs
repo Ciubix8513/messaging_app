@@ -11,7 +11,6 @@ diesel::table! {
     Group_Chats (chat_id) {
         chat_id -> Integer,
         chat_name -> Varchar,
-        created_by -> Integer,
         created_at -> Datetime,
     }
 }
@@ -37,7 +36,6 @@ diesel::table! {
 
 diesel::joinable!(Group_Chat_Members -> Group_Chats (chat_id));
 diesel::joinable!(Group_Chat_Members -> Users (user_id));
-diesel::joinable!(Group_Chats -> Users (created_by));
 diesel::joinable!(Messages -> Group_Chats (chat_id));
 diesel::joinable!(Messages -> Users (user_id));
 
