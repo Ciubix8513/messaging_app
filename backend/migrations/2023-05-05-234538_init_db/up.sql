@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE Users (
+CREATE TABLE users (
     user_id INT NOT NULL AUTO_INCREMENT,
     username VARCHAR(16) NOT NULL UNIQUE,
     email VARCHAR(128) NOT NULL UNIQUE,
@@ -7,29 +7,29 @@ CREATE TABLE Users (
     PRIMARY KEY (user_id)
 );
 
-CREATE TABLE Group_Chats (
+CREATE TABLE group_chats (
     chat_id INT NOT NULL AUTO_INCREMENT,
     chat_name VARCHAR(128) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (chat_id)
 );
 
-CREATE TABLE Group_Chat_Members (
+CREATE TABLE group_chat_members (
     chat_id INT NOT NULL,
     user_id INT NOT NULL,
     PRIMARY KEY (chat_id, user_id),
-    FOREIGN KEY (chat_id) REFERENCES Group_Chats(chat_id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    FOREIGN KEY (chat_id) REFERENCES group_chats(chat_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-CREATE TABLE Messages (
+CREATE TABLE messages (
     message_id INT NOT NULL AUTO_INCREMENT,
     chat_id INT NOT NULL,
     user_id INT NOT NULL,
     message_text TEXT NOT NULL,
     sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (message_id),
-    FOREIGN KEY (chat_id) REFERENCES Group_Chats(chat_id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    FOREIGN KEY (chat_id) REFERENCES group_chats(chat_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 

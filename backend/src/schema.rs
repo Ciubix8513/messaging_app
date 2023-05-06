@@ -1,14 +1,14 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    Group_Chat_Members (chat_id, user_id) {
+    group_chat_members (chat_id, user_id) {
         chat_id -> Integer,
         user_id -> Integer,
     }
 }
 
 diesel::table! {
-    Group_Chats (chat_id) {
+    group_chats (chat_id) {
         chat_id -> Integer,
         chat_name -> Varchar,
         created_at -> Datetime,
@@ -16,7 +16,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    Messages (message_id) {
+    messages (message_id) {
         message_id -> Integer,
         chat_id -> Integer,
         user_id -> Integer,
@@ -26,7 +26,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    Users (user_id) {
+    users (user_id) {
         user_id -> Integer,
         username -> Varchar,
         email -> Varchar,
@@ -34,14 +34,14 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(Group_Chat_Members -> Group_Chats (chat_id));
-diesel::joinable!(Group_Chat_Members -> Users (user_id));
-diesel::joinable!(Messages -> Group_Chats (chat_id));
-diesel::joinable!(Messages -> Users (user_id));
+diesel::joinable!(group_chat_members -> group_chats (chat_id));
+diesel::joinable!(group_chat_members -> users (user_id));
+diesel::joinable!(messages -> group_chats (chat_id));
+diesel::joinable!(messages -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    Group_Chat_Members,
-    Group_Chats,
-    Messages,
-    Users,
+    group_chat_members,
+    group_chats,
+    messages,
+    users,
 );
