@@ -1,44 +1,17 @@
 #![allow(unused_imports)]
-use actix_web::{
-    get,
-    http::StatusCode,
-    post, test,
-    web::{self, Data},
-    App, HttpResponse, HttpServer, Responder,
-};
-use diesel::RunQueryDsl;
+use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::{env, fs::File, io::BufReader};
 
-use crate::models::User;
+use crate::user_endpoints::{add_user, get_users};
 
 pub mod models;
 pub mod schema;
-pub mod utils;
+mod user_endpoints;
+mod utils;
 
-type DbPool = diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::MysqlConnection>>;
-
-#[get("/users")]
-async fn get_users(pool: web::Data<DbPool>) -> impl Responder {
-    use self::schema::users::dsl::*;
-
-    let connection = &mut pool.get().unwrap();
-    let results = users.load::<User>(connection);
-
-    match results {
-        Ok(results) => HttpResponse::Ok().json(results.first().unwrap()),
-        Err(error) => HttpResponse::InternalServerError().body(error.to_string()),
-    }
-}
-
-#[actix_web::test]
-async fn test_get_users() {
-    let mut app = test::init_service(App::new().service(get_users)).await;
-    let req = test::TestRequest::with_uri("/users").to_request();
-    let resp = test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), StatusCode::OK);
-}
+pub type DbPool = diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::MysqlConnection>>;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -64,6 +37,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(Data::new(pool.clone()))
             .service(get_users)
+            .service(add_user)
     })
     .bind((ip, port))?
     // .bind_openssl((ip, port), builder)?
