@@ -1,4 +1,4 @@
-use actix_web::{delete, post, web, HttpResponse, Responder};
+use actix_web::{delete, dev::ResourcePath, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use common_structs::{Login, UserData};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
@@ -47,3 +47,23 @@ pub async fn login(
     }
 }
 
+#[delete("/auth/logout")]
+pub async fn logout(session: actix_session::Session) -> impl Responder {
+    match session_user_id(&session).await {
+        Ok(_) => {
+            session.purge();
+            HttpResponse::Ok().body("")
+        }
+        Err(e) => HttpResponse::BadRequest().body(e.to_string()),
+    }
+}
+
+async fn session_user_id(session: &actix_session::Session) -> Result<i32, String> {
+    match session.get(keys::USER_ID_KEY) {
+        Ok(id) => match id {
+            Some(id) => Ok(id),
+            None => Err("NO VALUE".to_string()),
+        },
+        Err(e) => Err(format!("{}", e)),
+    }
+}

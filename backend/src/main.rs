@@ -43,11 +43,12 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(pool.clone()))
+            .service(login)
+            .service(logout)
             .wrap(SessionMiddleware::new(
                 CookieSessionStore::default(),
                 secret_key.clone(),
             ))
-            .service(login)
             .service(add_user)
             .service(get_users)
             //Wrap "Wraps" all the registered services in itself
