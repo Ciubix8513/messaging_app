@@ -2,7 +2,8 @@
 use actix_web::{get, http::StatusCode, test, App, HttpResponse, HttpServer, Responder};
 use diesel::RunQueryDsl;
 use dotenvy::dotenv;
-use std::env;
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use std::{env, fs::File, io::BufReader};
 
 use crate::models::User;
 
@@ -44,8 +45,19 @@ async fn main() -> std::io::Result<()> {
         .expect("Port must be set")
         .parse()
         .expect("Invalid port number");
+    // let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    // builder.set_private_key_file(
+    //     "/home/luna/Projects/corporate_network/target/debug/private.key",
+    //     SslFiletype::PEM,
+    // )?;
+    // builder.set_certificate_chain_file(
+    //     "/home/luna/Projects/corporate_network/target/debug/certificate.crt",
+    // )?;
+    println!("Running server on {}:{}", ip, port);
+
     HttpServer::new(|| App::new().service(get_users))
         .bind((ip, port))?
+        // .bind_openssl((ip, port), builder)?
         .run()
         .await
 }
