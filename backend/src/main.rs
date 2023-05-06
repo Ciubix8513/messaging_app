@@ -9,7 +9,7 @@ use crate::auth_endpoints::{login, logout};
 use crate::user_endpoints::{add_user, get_users};
 
 mod auth_endpoints;
-pub mod keys;
+pub mod grimoire;
 pub mod models;
 pub mod schema;
 mod user_endpoints;

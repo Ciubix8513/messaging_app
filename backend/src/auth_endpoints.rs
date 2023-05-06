@@ -1,10 +1,10 @@
-use actix_web::{delete, dev::ResourcePath, post, web, HttpResponse, Responder};
+use actix_web::{delete, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use common_structs::{Login, UserData};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use password_hash::Encoding;
 
-use crate::{keys, DbPool};
+use crate::{grimoire, DbPool};
 
 #[post("/auth/login")]
 pub async fn login(
@@ -32,10 +32,10 @@ pub async fn login(
         Ok(_) => {
             session.renew();
             session
-                .insert(keys::USER_ID_KEY, user.1)
+                .insert(grimoire::USER_ID_KEY, user.1)
                 .expect("Could not insert user id into session");
             session
-                .insert(keys::USERNAME_KEY, login_info.username.clone())
+                .insert(grimoire::USERNAME_KEY, login_info.username.clone())
                 .expect("Could not insert user id into session");
             //User also gets a cookie
             HttpResponse::Ok().json(UserData {
@@ -59,7 +59,7 @@ pub async fn logout(session: actix_session::Session) -> impl Responder {
 }
 
 async fn session_user_id(session: &actix_session::Session) -> Result<i32, String> {
-    match session.get(keys::USER_ID_KEY) {
+    match session.get(grimoire::USER_ID_KEY) {
         Ok(id) => match id {
             Some(id) => Ok(id),
             None => Err("NO VALUE".to_string()),
