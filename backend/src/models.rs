@@ -14,6 +14,7 @@ pub struct User {
 pub struct GroupChat {
     pub id: i32,
     pub name: String,
+    pub created_by: i32,
     pub creation_date: chrono::NaiveDateTime,
 }
 
@@ -21,6 +22,15 @@ pub struct GroupChat {
 pub struct GroupChatMember {
     pub chat_id: i32,
     pub user_id: i32,
+}
+
+#[derive(Queryable)]
+pub struct ChatInvites {
+    pub id: i32,
+    pub chat_id: i32,
+    pub sender_id: i32,
+    pub recipient_id: i32,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 #[derive(Queryable)]
