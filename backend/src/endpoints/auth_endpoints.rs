@@ -50,7 +50,7 @@ pub async fn login(
 
 #[delete("/auth/logout")]
 pub async fn logout(session: actix_session::Session) -> impl Responder {
-    match is_logged_in(&session).await {
+    match is_logged_in(&session) {
         Ok(_) => {
             session.purge();
             HttpResponse::Ok()
@@ -65,7 +65,7 @@ pub async fn change_passowrd(
     new_password: web::Json<ChangePassword>,
     pool: web::Data<DbPool>,
 ) -> impl Responder {
-    let id = is_logged_in(&session).await;
+    let id = is_logged_in(&session);
     if id.is_err() {
         return HttpResponse::Unauthorized().body("");
     }

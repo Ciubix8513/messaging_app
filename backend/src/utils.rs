@@ -16,12 +16,10 @@ pub fn establish_connection() -> Pool<ConnectionManager<MysqlConnection>> {
         .expect("Could not build pool")
 }
 
-pub async fn is_logged_in(session: &actix_session::Session) -> Result<i32, String> {
+pub fn is_logged_in(session: &actix_session::Session) -> Result<i32, String> {
     match session.get(grimoire::USER_ID_KEY) {
-        Ok(id) => match id {
-            Some(id) => Ok(id),
-            None => Err("NO VALUE".to_string()),
-        },
+        Ok(Some(id)) => Ok(id),
+        Ok(None) => Err("No value".to_string()),
         Err(e) => Err(format!("{}", e)),
     }
 }
