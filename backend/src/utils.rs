@@ -1,9 +1,12 @@
+use argon2::{Argon2, PasswordHasher};
 use diesel::{
     mysql::MysqlConnection,
     r2d2::{ConnectionManager, Pool},
-    Connection, ConnectionError,
 };
+use password_hash::{rand_core::OsRng, SaltString};
 use std::env;
+
+use crate::grimoire;
 pub fn establish_connection() -> Pool<ConnectionManager<MysqlConnection>> {
     let db_url = env::var("DATABASE_URL").expect("DB url must be set");
     let manager = ConnectionManager::<MysqlConnection>::new(db_url);
@@ -11,4 +14,22 @@ pub fn establish_connection() -> Pool<ConnectionManager<MysqlConnection>> {
         .test_on_check_out(true)
         .build(manager)
         .expect("Could not build pool")
+}
+
+pub async fn is_logged_in(session: &actix_session::Session) -> Result<i32, String> {
+    match session.get(grimoire::USER_ID_KEY) {
+        Ok(id) => match id {
+            Some(id) => Ok(id),
+            None => Err("NO VALUE".to_string()),
+        },
+        Err(e) => Err(format!("{}", e)),
+    }
+}
+
+pub fn hash_password(password: &str) -> String {
+    let salt = SaltString::generate(&mut OsRng);
+    Argon2::default()
+        .hash_password(password.as_bytes(), salt.as_salt())
+        .unwrap()
+        .to_string()
 }

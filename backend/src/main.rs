@@ -1,12 +1,11 @@
-#![allow(unused_imports)]
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web::Data, App, HttpServer};
 use dotenvy::dotenv;
-use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use std::{env, fs::File, io::BufReader};
+// use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use std::env; //, fs::File, io::BufReader};
 
-use crate::auth_endpoints::{login, logout};
 use crate::user_endpoints::{add_user, get_users};
+use crate::auth_endpoints::*;
 
 mod auth_endpoints;
 pub mod grimoire;
@@ -51,6 +50,7 @@ async fn main() -> std::io::Result<()> {
             ))
             .service(add_user)
             .service(get_users)
+            .service(change_passowrd)
             //Wrap "Wraps" all the registered services in itself
             .wrap(middleware::Logger::default())
     })

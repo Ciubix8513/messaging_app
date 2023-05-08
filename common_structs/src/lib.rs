@@ -18,3 +18,9 @@ pub struct UserData {
     pub username: String,
     pub user_id: i32,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ChangePassword {
+    pub old_password: String,
+    pub new_password: String,
+}

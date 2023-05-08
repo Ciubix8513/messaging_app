@@ -1,9 +1,10 @@
 use actix_web::{delete, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use common_structs::{Login, UserData};
+use common_structs::{ChangePassword, Login, UserData};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use password_hash::Encoding;
 
+use crate::utils::{hash_password, is_logged_in};
 use crate::{grimoire, DbPool};
 
 #[post("/auth/login")]
@@ -49,21 +50,56 @@ pub async fn login(
 
 #[delete("/auth/logout")]
 pub async fn logout(session: actix_session::Session) -> impl Responder {
-    match session_user_id(&session).await {
+    match is_logged_in(&session).await {
         Ok(_) => {
             session.purge();
-            HttpResponse::Ok().body("")
+            HttpResponse::Ok()
         }
-        Err(e) => HttpResponse::BadRequest().body(e.to_string()),
+        Err(_) => HttpResponse::Unauthorized(),
     }
 }
 
-async fn session_user_id(session: &actix_session::Session) -> Result<i32, String> {
-    match session.get(grimoire::USER_ID_KEY) {
-        Ok(id) => match id {
-            Some(id) => Ok(id),
-            None => Err("NO VALUE".to_string()),
-        },
-        Err(e) => Err(format!("{}", e)),
+#[post("/auth/change-password")]
+pub async fn change_passowrd(
+    session: actix_session::Session,
+    new_password: web::Json<ChangePassword>,
+    pool: web::Data<DbPool>,
+) -> impl Responder {
+    let id = is_logged_in(&session).await;
+    if id.is_err() {
+        return HttpResponse::Unauthorized().body("");
+    }
+    let id = id.unwrap();
+    let connection = &mut pool.get().unwrap();
+    let password = {
+        use super::schema::users::dsl::*;
+        let result: Result<String, _> = users
+            .filter(user_id.eq(id))
+            .select(password)
+            .first(connection);
+        if result.is_err() {
+            return HttpResponse::InternalServerError().body(result.err().unwrap().to_string());
+        }
+        result.unwrap()
+    };
+    let password = PasswordHash::parse(&password, Encoding::B64).unwrap();
+    if Argon2::default()
+        .verify_password(new_password.old_password.as_bytes(), &password)
+        .is_err()
+    {
+        return HttpResponse::BadRequest().body("Wrong password");
+    }
+
+    let new_password = hash_password(&new_password.new_password);
+    {
+        use super::schema::users::dsl::*;
+        let result: Result<usize, _> = diesel::update(users.find(id))
+            .set(password.eq(new_password))
+            .execute(connection);
+        match result {
+            Ok(1) => HttpResponse::Ok().body(""),
+            Ok(_) => HttpResponse::InternalServerError().body(""),
+            Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+        }
     }
 }
