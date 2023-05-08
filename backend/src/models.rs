@@ -58,3 +58,11 @@ pub struct Invite {
     pub recipient_id: i32,
     pub created_at: chrono::NaiveDateTime,
 }
+
+#[derive(Insertable)]
+#[diesel(table_name = group_chats)]
+pub struct CreateChat {
+    pub chat_name: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub created_by: i32,
+}

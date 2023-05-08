@@ -48,6 +48,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_user_with_id)
             .service(change_passowrd)
             .service(send_invite)
+            .service(create_chat)
             //Wrap "Wraps" all the registered services in itself
             .wrap(middleware::Logger::default())
     })
