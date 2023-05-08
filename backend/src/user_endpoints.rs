@@ -1,36 +1,35 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
-use argon2::{
-    password_hash::{rand_core::OsRng, SaltString},
-    Argon2, PasswordHasher,
-};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 
 use super::DbPool;
-use crate::models::{AddUser, User};
+use crate::{models::AddUser, utils};
 
-#[get("/users")]
-async fn get_users(pool: web::Data<DbPool>) -> impl Responder {
+#[get("/users/{id}/name")]
+pub async fn get_user_with_id(pool: web::Data<DbPool>, path: web::Path<i32>) -> impl Responder {
     use super::schema::users::dsl::*;
+    let id = path.into_inner();
 
     let connection = &mut pool.get().unwrap();
-    let results = users.load::<User>(connection);
+    let results: Result<String, _> = users
+        .filter(user_id.eq(id))
+        .select(username)
+        .first(connection);
 
     match results {
-        Ok(results) => HttpResponse::Ok().json(results.first().unwrap()),
-        Err(error) => HttpResponse::InternalServerError().body(error.to_string()),
+        Ok(res) => HttpResponse::Ok().body(res),
+        Err(diesel::result::Error::NotFound) => {
+            HttpResponse::BadRequest().body(format!("No user with id {}", id))
+        }
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }
 
 #[post("/users/add-user")]
-async fn add_user(user: web::Json<AddUser>, pool: web::Data<DbPool>) -> impl Responder {
+pub async fn add_user(user: web::Json<AddUser>, pool: web::Data<DbPool>) -> impl Responder {
     use super::schema::users::dsl::*;
 
     //AddUser contains a plain text password well
-    let salt = SaltString::generate(&mut OsRng);
-    let hash = Argon2::default()
-        .hash_password(user.password.as_bytes(), salt.as_salt())
-        .unwrap();
-
+    let hash = utils::hash_password(&user.password);
     let connection = &mut pool.get().unwrap();
 
     let result = users
@@ -46,7 +45,7 @@ async fn add_user(user: web::Json<AddUser>, pool: web::Data<DbPool>) -> impl Res
         .values(AddUser {
             username: user.username.clone(),
             email: user.email.clone(),
-            password: hash.to_string(),
+            password: hash,
         })
         .execute(connection);
     match result {
@@ -55,11 +54,11 @@ async fn add_user(user: web::Json<AddUser>, pool: web::Data<DbPool>) -> impl Res
     }
 }
 
-#[actix_web::test]
-async fn test_get_users() {
-    let mut app = actix_web::test::init_service(actix_web::App::new().service(get_users)).await;
-    let req = actix_web::test::TestRequest::with_uri("/users").to_request();
+// #[actix_web::test]
+// async fn test_get_users() {
+//     let mut app = actix_web::test::init_service(actix_web::App::new().service(get_users)).await;
+//     let req = actix_web::test::TestRequest::with_uri("/users").to_request();
 
-    let resp = actix_web::test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), actix_web::http::StatusCode::OK);
-}
+//     let resp = actix_web::test::call_service(&mut app, req).await;
+//     assert_eq!(resp.status(), actix_web::http::StatusCode::OK);
+// }

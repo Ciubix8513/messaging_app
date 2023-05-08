@@ -4,8 +4,8 @@ use dotenvy::dotenv;
 // use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::env; //, fs::File, io::BufReader};
 
-use crate::user_endpoints::{add_user, get_users};
 use crate::auth_endpoints::*;
+use crate::user_endpoints::*;
 
 mod auth_endpoints;
 pub mod grimoire;
@@ -49,7 +49,7 @@ async fn main() -> std::io::Result<()> {
                 secret_key.clone(),
             ))
             .service(add_user)
-            .service(get_users)
+            .service(get_user_with_id)
             .service(change_passowrd)
             //Wrap "Wraps" all the registered services in itself
             .wrap(middleware::Logger::default())
