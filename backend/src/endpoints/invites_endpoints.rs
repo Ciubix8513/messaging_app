@@ -36,7 +36,7 @@ pub async fn send_invite(
     {
         use crate::schema::users::dsl::*;
 
-        let result: Result<usize, _> = users.find(invite.recepient_id).execute(connection);
+        let result: Result<usize, _> = users.find(invite.recipient_id).execute(connection);
         match result {
             Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
             Ok(0) => return HttpResponse::BadRequest().body("Invited user does not exist"),
@@ -53,7 +53,7 @@ pub async fn send_invite(
             .values(Invite {
                 chat_id: invite.chat_id,
                 sender_id: s_id,
-                recipient_id: invite.recepient_id,
+                recipient_id: invite.recipient_id,
                 created_at: chrono::Local::now().naive_utc(),
             })
             .execute(connection);

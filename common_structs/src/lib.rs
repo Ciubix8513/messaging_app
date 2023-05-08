@@ -28,5 +28,5 @@ pub struct ChangePassword {
 #[derive(Serialize, Deserialize)]
 pub struct SendInvite {
     pub chat_id: i32,
-    pub recepient_id: i32,
+    pub recipient_id: i32,
 }
