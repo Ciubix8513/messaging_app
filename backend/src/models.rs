@@ -49,3 +49,12 @@ pub struct AddUser {
     pub email: String,
     pub password: String,
 }
+
+#[derive(Insertable)]
+#[diesel(table_name = chat_invites)]
+pub struct Invite {
+    pub chat_id: i32,
+    pub sender_id: i32,
+    pub recipient_id: i32,
+    pub created_at: chrono::NaiveDateTime,
+}

@@ -24,3 +24,9 @@ pub struct ChangePassword {
     pub old_password: String,
     pub new_password: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct SendInvite {
+    pub chat_id: i32,
+    pub recepient_id: i32,
+}
