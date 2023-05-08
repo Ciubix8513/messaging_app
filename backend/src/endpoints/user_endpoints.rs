@@ -1,12 +1,12 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 
-use super::DbPool;
+use crate::DbPool;
 use crate::{models::AddUser, utils};
 
 #[get("/users/{id}/name")]
 pub async fn get_user_with_id(pool: web::Data<DbPool>, path: web::Path<i32>) -> impl Responder {
-    use super::schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let id = path.into_inner();
 
     let connection = &mut pool.get().unwrap();
@@ -26,7 +26,7 @@ pub async fn get_user_with_id(pool: web::Data<DbPool>, path: web::Path<i32>) -> 
 
 #[post("/users/add-user")]
 pub async fn add_user(user: web::Json<AddUser>, pool: web::Data<DbPool>) -> impl Responder {
-    use super::schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     //AddUser contains a plain text password well
     let hash = utils::hash_password(&user.password);

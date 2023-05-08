@@ -4,14 +4,12 @@ use dotenvy::dotenv;
 // use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::env; //, fs::File, io::BufReader};
 
-use crate::auth_endpoints::*;
-use crate::user_endpoints::*;
+use crate::endpoints::*;
 
-mod auth_endpoints;
+mod endpoints;
 pub mod grimoire;
 pub mod models;
 pub mod schema;
-mod user_endpoints;
 mod utils;
 
 pub type DbPool = diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::MysqlConnection>>;

@@ -72,7 +72,7 @@ pub async fn change_passowrd(
     let id = id.unwrap();
     let connection = &mut pool.get().unwrap();
     let password = {
-        use super::schema::users::dsl::*;
+        use crate::schema::users::dsl::*;
         let result: Result<String, _> = users
             .filter(user_id.eq(id))
             .select(password)
@@ -92,7 +92,7 @@ pub async fn change_passowrd(
 
     let new_password = hash_password(&new_password.new_password);
     {
-        use super::schema::users::dsl::*;
+        use crate::schema::users::dsl::*;
         let result: Result<usize, _> = diesel::update(users.find(id))
             .set(password.eq(new_password))
             .execute(connection);
