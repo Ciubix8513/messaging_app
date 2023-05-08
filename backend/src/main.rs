@@ -1,8 +1,7 @@
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{cookie::Key, middleware, web::Data, App, HttpServer};
+use actix_web::{cookie::Key, middleware, web::Data, App, HttpResponse, HttpServer, Responder};
 use dotenvy::dotenv;
-// use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use std::env; //, fs::File, io::BufReader};
+use std::env;
 
 use crate::endpoints::*;
 
@@ -14,6 +13,13 @@ mod utils;
 
 pub type DbPool = diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::MysqlConnection>>;
 
+#[actix_web::get("/")]
+async fn html_page() -> impl Responder {
+    HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("index.html"))
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -23,15 +29,6 @@ async fn main() -> std::io::Result<()> {
         .parse()
         .expect("Invalid port number");
     let pool = utils::establish_connection();
-
-    // let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-    // builder.set_private_key_file(
-    //     "/home/luna/Projects/corporate_network/target/debug/private.key",
-    //     SslFiletype::PEM,
-    // )?;
-    // builder.set_certificate_chain_file(
-    //     "/home/luna/Projects/corporate_network/target/debug/certificate.crt",
-    // )?;
     let secret_key = Key::generate();
 
     println!("Running server on {}:{}", ip, port);
@@ -40,6 +37,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(pool.clone()))
+            .service(html_page)
             .service(login)
             .service(logout)
             .wrap(SessionMiddleware::new(
@@ -49,11 +47,12 @@ async fn main() -> std::io::Result<()> {
             .service(add_user)
             .service(get_user_with_id)
             .service(change_passowrd)
+            .service(send_invite)
             //Wrap "Wraps" all the registered services in itself
             .wrap(middleware::Logger::default())
     })
+    //Fuck ssl i'm just gonna use cloudflare tunnels
     .bind((ip, port))?
-    // .bind_openssl((ip, port), builder)?
     .run()
     .await
 }
