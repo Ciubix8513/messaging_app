@@ -30,3 +30,12 @@ pub struct SendInvite {
     pub chat_id: i32,
     pub recipient_id: i32,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct GetInvites {
+    pub invite_id: i32,
+    pub chat_id: i32,
+    pub chat_name: String,
+    pub sender_name: String,
+    pub created_at: chrono::NaiveDateTime,
+}
