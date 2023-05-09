@@ -1,6 +1,6 @@
 use actix_web::{post, web, HttpResponse, Responder};
 use common_structs::{GetInvites, SendInvite};
-use diesel::{ExpressionMethods, JoinOnDsl, JoinTo, QueryDsl, RunQueryDsl};
+use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
 
 use crate::{
     models::{ChatInvites, GroupChatMember, Invite},
@@ -155,7 +155,7 @@ pub async fn accept_invite(
     }
     let u_id: i32 = sender_id.unwrap();
     let invite = invite.into_inner();
-    let mut c_id = 0;
+    let c_id;
 
     let connection = &mut pool.get().unwrap();
     //Check the invite
