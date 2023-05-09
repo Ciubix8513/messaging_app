@@ -1,7 +1,9 @@
 [workspace]
+resolver = "2"
 members = [
   "frontend",
-  "backend"
+  "backend",
+  "common_structs"
 ]
 [workspace.package]
 version = "0.1.0"
