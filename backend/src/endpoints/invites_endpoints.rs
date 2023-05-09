@@ -2,7 +2,12 @@ use actix_web::{post, web, HttpResponse, Responder};
 use common_structs::{GetInvites, SendInvite};
 use diesel::{ExpressionMethods, JoinOnDsl, JoinTo, QueryDsl, RunQueryDsl};
 
-use crate::{models::Invite, schema, utils::is_logged_in, DbPool};
+use crate::{
+    models::{ChatInvites, GroupChatMember, Invite},
+    schema,
+    utils::is_logged_in,
+    DbPool,
+};
 
 #[post("/invites/send")]
 pub async fn send_invite(
@@ -105,6 +110,97 @@ async fn get_invites(session: actix_session::Session, pool: web::Data<DbPool>) -
                     })
                     .collect::<Vec<GetInvites>>(),
             ),
+            Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
+        }
+    }
+}
+
+#[post("/invites/reject")]
+pub async fn reject_invite(
+    invite: web::Json<i32>,
+    session: actix_session::Session,
+    pool: web::Data<DbPool>,
+) -> impl Responder {
+    let sender_id = is_logged_in(&session);
+    if sender_id.is_err() {
+        return HttpResponse::Unauthorized().body("");
+    }
+    let u_id: i32 = sender_id.unwrap();
+    let invite = invite.into_inner();
+    {
+        use crate::schema::chat_invites::dsl::*;
+
+        let connection = &mut pool.get().unwrap();
+        let result = diesel::delete(chat_invites)
+            .filter(invite_id.eq(invite))
+            .filter(recipient_id.eq(u_id))
+            .execute(connection);
+        match result {
+            Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+            Ok(0) => HttpResponse::Unauthorized().body(""),
+            _ => HttpResponse::Ok().body(""),
+        }
+    }
+}
+
+#[post("/invites/accept")]
+pub async fn accept_invite(
+    invite: web::Json<i32>,
+    session: actix_session::Session,
+    pool: web::Data<DbPool>,
+) -> impl Responder {
+    let sender_id = is_logged_in(&session);
+    if sender_id.is_err() {
+        return HttpResponse::Unauthorized().body("");
+    }
+    let u_id: i32 = sender_id.unwrap();
+    let invite = invite.into_inner();
+    let mut c_id = 0;
+
+    let connection = &mut pool.get().unwrap();
+    //Check the invite
+    {
+        use schema::chat_invites::dsl::*;
+
+        let result: Result<ChatInvites, diesel::result::Error> =
+            chat_invites.find(invite).first::<ChatInvites>(connection);
+        match result {
+            Ok(res) => {
+                if res.recipient_id != u_id {
+                    return HttpResponse::Unauthorized().body("");
+                }
+                c_id = res.chat_id;
+            }
+            Err(diesel::result::Error::NotFound) => return HttpResponse::BadRequest().body(""),
+            Err(e) => return HttpResponse::InternalServerError().body(format!("{}", e)),
+        }
+    }
+
+    //Delete the invite
+    {
+        use crate::schema::chat_invites::dsl::*;
+
+        let result = diesel::delete(chat_invites)
+            .filter(invite_id.eq(invite))
+            .filter(recipient_id.eq(u_id))
+            .execute(connection);
+        match result {
+            Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
+            Ok(0) => return HttpResponse::Unauthorized().body(""),
+            _ => (),
+        }
+    }
+    //Add the user
+    {
+        use schema::group_chat_members::dsl::*;
+        let result = diesel::insert_into(group_chat_members)
+            .values(GroupChatMember {
+                chat_id: c_id,
+                user_id: u_id,
+            })
+            .execute(connection);
+        match result {
+            Ok(_) => HttpResponse::Ok().body(""),
             Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
         }
     }

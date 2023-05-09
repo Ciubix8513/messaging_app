@@ -51,6 +51,8 @@ async fn main() -> std::io::Result<()> {
             .service(create_chat)
             .service(exit_chat)
             .service(get_invites)
+            .service(reject_invite)
+            .service(accept_invite)
             //Wrap "Wraps" all the registered services in itself
             .wrap(middleware::Logger::default())
     })

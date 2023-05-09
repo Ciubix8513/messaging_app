@@ -18,7 +18,7 @@ pub struct GroupChat {
     pub creation_date: chrono::NaiveDateTime,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Insertable)]
 pub struct GroupChatMember {
     pub chat_id: i32,
     pub user_id: i32,
