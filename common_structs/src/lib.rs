@@ -54,3 +54,11 @@ pub struct GetMessage {
     pub message_text: String,
     pub sent_at: chrono::NaiveDateTime,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct GetChat {
+    pub chat_id: i32,
+    pub chat_name: String,
+    pub creator_id: i32,
+    pub creator_name: String,
+}

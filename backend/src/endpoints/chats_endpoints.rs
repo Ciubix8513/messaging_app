@@ -1,5 +1,6 @@
-use actix_web::{post, web, HttpResponse, Responder};
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use actix_web::{get, post, web, HttpResponse, Responder};
+use common_structs::GetChat;
+use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
 
 use crate::{models::CreateChat, utils::is_logged_in, DbPool};
 
@@ -69,6 +70,45 @@ async fn exit_chat(
         match result {
             Ok(_) => HttpResponse::Ok().body(""),
             Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        }
+    }
+}
+
+//HOW DID I FORGET TO ADD THIS?
+#[get("/chats/get")]
+async fn get_chats(pool: web::Data<DbPool>, session: actix_session::Session) -> impl Responder {
+    let sender_id = is_logged_in(&session);
+    if sender_id.is_err() {
+        return HttpResponse::Unauthorized().body("");
+    }
+    let sender_id: i32 = sender_id.unwrap();
+
+    let connection = &mut pool.get().unwrap();
+
+    {
+        use crate::schema::group_chat_members::dsl as gcm;
+        use crate::schema::group_chats::dsl as gc;
+        use crate::schema::users::dsl as u;
+
+        let result: Result<Vec<(i32, String, i32, String)>, _> = gcm::group_chat_members
+            .filter(gcm::chat_id.eq(sender_id))
+            .inner_join(gc::group_chats)
+            .inner_join(u::users.on(u::user_id.eq(gc::created_by)))
+            .select((gcm::chat_id, gc::chat_name, u::user_id, u::username))
+            .load(connection);
+        match result {
+            Ok(values) => HttpResponse::Ok().json(
+                values
+                    .iter()
+                    .map(|v| GetChat {
+                        chat_id: v.0,
+                        chat_name: v.1.clone(),
+                        creator_id: v.2,
+                        creator_name: v.3.clone(),
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
         }
     }
 }
