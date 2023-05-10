@@ -1,6 +1,6 @@
 use common_structs::Login;
 use iced::{
-    widget::{button, column, container, text, text_input},
+    widget::{button, column, container, row, text, text_input},
     Alignment, Color, Length,
 };
 use reqwest::Method;
@@ -50,7 +50,9 @@ impl MainForm {
         // }
     }
     pub fn login_view<'a>(&self) -> iced::Element<'a, Message> {
+        let login_text = text("Login").size(40);
         let width = 200;
+
         let login = text_input("Login..", &self.login_data.login_textbox)
             .width(width)
             .on_input(Message::LoginChanged);
@@ -59,14 +61,15 @@ impl MainForm {
             .width(width)
             .on_input(Message::PasswordChanged);
         let error = text(&self.login_data.error_message).style(Color::from_rgb(1.0, 0.0, 0.0));
-        let login_button = button("Log in").on_press(Message::ButtonPressed);
+        let signup_button = button("Signup").on_press(Message::LoginViewSignupButtonPressed);
+        let login_button = button("Log in").on_press(Message::LoginButtonPressed);
 
-        let mut content = column![login, password];
+        let mut content = column![login_text, login, password];
         if self.login_data.show_error_message {
             content = content.push(error);
         }
         content = content
-            .push(login_button)
+            .push(row![login_button, signup_button].spacing(5))
             .spacing(30)
             .align_items(Alignment::Center);
         container(content)

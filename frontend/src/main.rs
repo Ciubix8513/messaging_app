@@ -11,6 +11,7 @@ use reqwest::blocking::Client;
 mod grimoire;
 mod login;
 mod main_window;
+mod signup;
 
 fn cookie_path() -> PathBuf {
     let base_dirs = directories::BaseDirs::new().unwrap();
