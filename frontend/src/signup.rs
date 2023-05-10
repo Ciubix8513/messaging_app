@@ -1,4 +1,4 @@
-use common_structs::AddUser;
+use common_structs::{AddUser, Login};
 use iced::{
     widget::{button, column, container, text, text_input},
     Alignment, Color, Length,
@@ -7,7 +7,7 @@ use reqwest::Method;
 
 use crate::{
     grimoire,
-    main_window::{MainForm, Message,  WindowMode},
+    main_window::{MainForm, Message, WindowMode},
     CLIENT,
 };
 
@@ -34,10 +34,9 @@ impl MainForm {
         }
         //Validate email
         let re = crate::regex::email_regex();
-        if !re.is_match(&self.signup_data.email_textbox){
+        if !re.is_match(&self.signup_data.email_textbox) {
             self.signup_data.show_error_message = true;
-            self.signup_data.error_message =
-                "Invalid email adress".to_string();
+            self.signup_data.error_message = "Invalid email adress".to_string();
             return;
         }
         //Passed all the checks, do the request
@@ -60,6 +59,19 @@ impl MainForm {
             self.signup_data.error_message = response.text().unwrap();
             return;
         }
+        let body = Login {
+            username: self.signup_data.username_textbox.clone(),
+            password: self.signup_data.password_textbox[0].clone(),
+        };
+        let response = CLIENT
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .request(Method::POST, grimoire::AUTH_LOGIN.clone())
+            .json(&body)
+            .send()
+            .unwrap();
         //Log in
         self.winodow_mode = WindowMode::Messaging;
     }
