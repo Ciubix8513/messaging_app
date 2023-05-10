@@ -5,7 +5,7 @@ use iced::{
     Color, Length,
 };
 use iced_aw::{Card, Modal};
-use reqwest::Method;
+use reqwest::{Method, StatusCode};
 
 use crate::{
     grimoire,
@@ -39,7 +39,8 @@ impl MainForm {
             .send()
             .unwrap();
         if !result.status().is_success() && result.status() != reqwest::StatusCode::NOT_FOUND {
-            self.error_message(result.text().unwrap());
+            let status = result.status();
+            self.error_message(result.text().unwrap(), status);
             return;
         }
         let data: Vec<GetChat> = result.json().unwrap_or(Vec::default());
@@ -52,8 +53,8 @@ impl MainForm {
             .collect();
     }
 
-    pub fn error_message(&mut self, message: String) {
-        println!("ERROR {}", message);
+    pub fn error_message(&mut self, message: String, code: StatusCode) {
+        println!("ERROR {:#?} / {}", code, message);
         self.messaging_data.show_error_modal = true;
         self.messaging_data.error_message = message;
     }
@@ -85,6 +86,38 @@ impl MainForm {
 
         self.winodow_mode = WindowMode::Login;
         self.login_data = LoginData::default();
+    }
+
+    pub fn create_chat(&mut self) {
+        let result = CLIENT
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .request(Method::POST, grimoire::CHATS_CREATE.clone())
+            .json(&self.messaging_data.create_chat_text)
+            .header(
+                "cookie",
+                format!(
+                    "id={}",
+                    COOKIE_STORE
+                        .lock()
+                        .unwrap()
+                        .iter_unexpired()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .value()
+                ),
+            )
+            .send()
+            .unwrap();
+        if !result.status().is_success() {
+            let status = result.status();
+            self.error_message(result.text().unwrap(), status);
+            return;
+        }
+        self.update_chat_list();
     }
 
     pub fn messaging_view(&self) -> iced::Element<'_, Message> {
@@ -141,9 +174,14 @@ impl MainForm {
                         button(text("Cancel").horizontal_alignment(Horizontal::Center))
                             .width(Length::Fill)
                             .on_press(Message::CloseCreateChatModal),
-                        button(text("Ok").horizontal_alignment(Horizontal::Center))
-                            .width(Length::Fill)
-                            .on_press(Message::ConfirmCreateChat),
+                        {
+                            let mut b = button(text("Ok").horizontal_alignment(Horizontal::Center))
+                                .width(Length::Fill);
+                            if !self.messaging_data.create_chat_text.is_empty() {
+                                b = b.on_press(Message::ConfirmCreateChat)
+                            }
+                            b
+                        },
                     ]
                     .spacing(5),
                 )

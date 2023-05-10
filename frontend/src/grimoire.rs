@@ -10,7 +10,7 @@ pub static AUTH_CHANGE_PASSWORD: Lazy<Url> =
     Lazy::new(|| API_URL.join("/auth/change-password").unwrap());
 pub static CHATS_CREATE: Lazy<Url> = Lazy::new(|| API_URL.join("/chats/create").unwrap());
 pub static CHATS_EXIT: Lazy<Url> = Lazy::new(|| API_URL.join("/chats/exit").unwrap());
-pub static CHATS_GET: Lazy<Url> = Lazy::new(|| API_URL.join("/chat/get").unwrap());
+pub static CHATS_GET: Lazy<Url> = Lazy::new(|| API_URL.join("/chats/get").unwrap());
 pub static INVITES_SEND: Lazy<Url> = Lazy::new(|| API_URL.join("/invites/send").unwrap());
 pub static INVITES_GET: Lazy<Url> = Lazy::new(|| API_URL.join("/invites/get").unwrap());
 pub static INVITES_REJECT: Lazy<Url> = Lazy::new(|| API_URL.join("/invites/reject").unwrap());
