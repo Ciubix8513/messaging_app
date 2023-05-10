@@ -10,6 +10,7 @@ use reqwest::blocking::Client;
 mod grimoire;
 mod login;
 mod main_window;
+mod messaging;
 mod regex;
 mod signup;
 
@@ -44,7 +45,7 @@ fn main() -> Result<(), iced::Error> {
                 "messenger_app frontend / ",
                 env!("CARGO_PKG_VERSION")
             ))
-            // .cookie_store(true)
+            .cookie_store(true)
             .cookie_provider(Arc::clone(&COOKIE_STORE))
             .build()
             .unwrap(),

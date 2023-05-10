@@ -44,6 +44,7 @@ pub enum Message {
     SignupPasswordChanged(String, usize),
     BackButtonPressed,
     SignupButtonPressed,
+    LogoutButtonPressed,
 }
 
 impl Sandbox for MainForm {
@@ -70,6 +71,7 @@ impl Sandbox for MainForm {
             Message::EmailChanged(v) => self.signup_data.email_textbox = v,
             Message::SignupPasswordChanged(v, i) => self.signup_data.password_textbox[i] = v,
             Message::SignupButtonPressed => self.signup(),
+            Message::LogoutButtonPressed => self.logout(),
         }
     }
 
@@ -77,7 +79,7 @@ impl Sandbox for MainForm {
         match self.winodow_mode {
             WindowMode::Login => self.login_view(),
             WindowMode::SignUp => self.signup_view(),
-            WindowMode::Messaging => todo!(),
+            WindowMode::Messaging => self.messaging_view(),
         }
     }
 
