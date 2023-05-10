@@ -22,6 +22,7 @@ pub enum WindowMode {
     #[default]
     Login,
     SignUp,
+    Messaging,
 }
 #[derive(Default)]
 pub struct MainForm {
@@ -58,7 +59,11 @@ impl Sandbox for MainForm {
             Message::LoginChanged(v) => self.login_data.login_textbox = v,
             Message::PasswordChanged(v) => self.login_data.password_textbox = v,
             Message::LoginButtonPressed => self.login(),
-            Message::LoginViewSignupButtonPressed => self.winodow_mode = WindowMode::SignUp,
+            Message::LoginViewSignupButtonPressed => {
+                //Clear signup data
+                self.signup_data = SignupData::default();
+                self.winodow_mode = WindowMode::SignUp
+            }
             Message::BackButtonPressed => self.winodow_mode = WindowMode::Login,
             //Signup stuff
             Message::UsernameChanged(v) => self.signup_data.username_textbox = v,
@@ -72,6 +77,7 @@ impl Sandbox for MainForm {
         match self.winodow_mode {
             WindowMode::Login => self.login_view(),
             WindowMode::SignUp => self.signup_view(),
+            WindowMode::Messaging => todo!(),
         }
     }
 

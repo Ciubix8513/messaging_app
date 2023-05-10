@@ -7,7 +7,7 @@ use reqwest::Method;
 
 use crate::{
     grimoire,
-    main_window::{MainForm, Message},
+    main_window::{MainForm, Message, SignupData, WindowMode},
     CLIENT,
 };
 
@@ -26,8 +26,13 @@ impl MainForm {
             self.signup_data.error_message = "Passwords don't match".to_string();
             return;
         }
-        return;
-
+        if self.signup_data.password_textbox[0].len() < 8 {
+            self.signup_data.show_error_message = true;
+            self.signup_data.error_message =
+                "Password must be at least 8 characters long".to_string();
+            return;
+        }
+        //Passed all the checks, do the request
         let body = AddUser {
             username: self.signup_data.username_textbox.clone(),
             password: self.signup_data.password_textbox[0].clone(),
@@ -42,6 +47,16 @@ impl MainForm {
             .json(&body)
             .send()
             .unwrap();
+        if !response.status().is_success() {
+            self.signup_data.show_error_message = true;
+            self.signup_data.error_message = response.text().unwrap();
+            return;
+        }
+        //Clear data
+        self.signup_data = SignupData::default();
+        //Log in
+        self.winodow_mode = WindowMode::Messaging;
+        return;
     }
 
     pub fn signup_view<'a>(&self) -> iced::Element<'a, Message> {
