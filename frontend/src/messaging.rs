@@ -1,16 +1,19 @@
 use iced::{
-    widget::{button, container, row},
+    widget::{button, column, container, row, text},
     Length,
 };
 use reqwest::Method;
 
 use crate::{
     grimoire,
-    main_window::{LoginData, MainForm, Message, WindowMode},
+    main_window::{MainForm, Message, WindowMode},
+    window_structs::LoginData,
     CLIENT, COOKIE_STORE,
 };
 
 impl MainForm {
+    pub fn update_chat_list(&mut self) {}
+
     pub fn logout(&mut self) {
         let c = COOKIE_STORE
             .lock()
@@ -41,14 +44,23 @@ impl MainForm {
     }
 
     pub fn messaging_view<'a>(&self) -> iced::Element<'a, Message> {
-        //Start with the top bar
-        let logout = button("Logout").on_press(Message::LogoutButtonPressed);
-
-        container(row![logout])
-            .align_x(iced::alignment::Horizontal::Right)
-            .height(35)
-            .padding(2)
-            .width(Length::Fill)
-            .into()
+        let top_bar = {
+            //Start with the top bar
+            let logout = button("Logout").on_press(Message::LogoutButtonPressed);
+            container(row![logout])
+                .align_x(iced::alignment::Horizontal::Right)
+                .height(35)
+                .padding(2)
+                .width(Length::Fill)
+        };
+        let side_bar = {
+            let contents = text("");
+            container(row![contents])
+                .align_x(iced::alignment::Horizontal::Right)
+                .height(35)
+                .padding(2)
+                .width(Length::Fill)
+        };
+        container(column![top_bar, side_bar]).into()
     }
 }

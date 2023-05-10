@@ -5,8 +5,11 @@ use iced::{
 };
 use reqwest::Method;
 
-use super::main_window::*;
-use crate::{grimoire, CLIENT};
+use crate::{
+    grimoire,
+    main_window::{MainForm, Message, WindowMode},
+    CLIENT,
+};
 
 impl MainForm {
     pub fn login(&mut self) {
@@ -55,7 +58,7 @@ impl MainForm {
         }
         content = content
             .push(row![login_button, signup_button].spacing(5))
-            .spacing(30)
+            .spacing(15)
             .align_items(Alignment::Center);
         container(content)
             .width(Length::Fill)

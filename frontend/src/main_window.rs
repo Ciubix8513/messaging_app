@@ -1,21 +1,5 @@
+use crate::window_structs::*;
 use iced::Sandbox;
-
-#[derive(Default)]
-pub struct LoginData {
-    pub login_textbox: String,
-    pub password_textbox: String,
-    pub error_message: String,
-    pub show_error_message: bool,
-}
-
-#[derive(Default)]
-pub struct SignupData {
-    pub username_textbox: String,
-    pub email_textbox: String,
-    pub password_textbox: [String; 2],
-    pub error_message: String,
-    pub show_error_message: bool,
-}
 
 #[derive(Default)]
 pub enum WindowMode {
@@ -29,6 +13,7 @@ pub struct MainForm {
     pub login_data: LoginData,
     pub winodow_mode: WindowMode,
     pub signup_data: SignupData,
+    pub messaging_data: MessagingData,
 }
 
 #[derive(Debug, Clone)]

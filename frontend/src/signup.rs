@@ -63,7 +63,7 @@ impl MainForm {
             username: self.signup_data.username_textbox.clone(),
             password: self.signup_data.password_textbox[0].clone(),
         };
-        let response = CLIENT
+        CLIENT
             .lock()
             .unwrap()
             .as_ref()

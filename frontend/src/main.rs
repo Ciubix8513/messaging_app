@@ -13,6 +13,7 @@ mod main_window;
 mod messaging;
 mod regex;
 mod signup;
+mod window_structs;
 
 fn cookie_path() -> PathBuf {
     let base_dirs = directories::BaseDirs::new().unwrap();
@@ -53,7 +54,7 @@ fn main() -> Result<(), iced::Error> {
 
     let mut settings = Settings::default();
     settings.window.resizable = false;
-    settings.window.size = (320, 600);
+    settings.window.size = (600, 480);
     main_window::MainForm::run(settings)?;
     println!("Quit");
 
