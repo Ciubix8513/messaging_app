@@ -6,7 +6,7 @@ use iced::{
 use reqwest::Method;
 
 use super::main_window::*;
-use crate::{grimoire, CLIENT, COOKIE_STORE};
+use crate::{grimoire, CLIENT};
 
 impl MainForm {
     pub fn login(&mut self) {
@@ -23,8 +23,6 @@ impl MainForm {
             .json(&body)
             .send()
             .unwrap();
-        println!("{:#?}", response);
-        println!("Num cookies {}", response.cookies().count());
 
         if !response.status().is_success() {
             self.login_data.error_message = String::from("Wrong username or password");
@@ -33,21 +31,8 @@ impl MainForm {
             return;
         }
 
-        let cnt = COOKIE_STORE.lock().unwrap().iter_any().count();
-        println!("{} cookies in the store", cnt)
-
-        // COOKIE_STORE.lock().unwrap().insert_raw(
-        //     response.cookies().collect::<Vec<_>>().first().unwrap() as cookie::Cookie,
-        //     response.url(),
-        // );
-
-        // {
-        //     self.login_data.show_error_message = false;
-        //     println!("Logged in successfully");
-        //     self.winodow_mode = WindowMode::Main;
-        //     return;
-        //     //Open the other window
-        // }
+        //Login
+        self.winodow_mode = WindowMode::Messaging;
     }
     pub fn login_view<'a>(&self) -> iced::Element<'a, Message> {
         let login_text = text("Login").size(40);

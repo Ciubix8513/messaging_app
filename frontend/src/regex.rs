@@ -1,7 +1,7 @@
 use regex::Regex;
 
 pub fn email_regex() -> Regex {
-    Regex::new(r"[a-zA-Z0-9._%+-]+\@[a-zA-Z0-9.-]+\.[a-zA-Z]{1,}").unwrap()
+    Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{1,}").unwrap()
 }
 #[test]
 fn test_email_regex() {

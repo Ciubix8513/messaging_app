@@ -7,7 +7,7 @@ use reqwest::Method;
 
 use crate::{
     grimoire,
-    main_window::{MainForm, Message, SignupData, WindowMode},
+    main_window::{MainForm, Message,  WindowMode},
     CLIENT,
 };
 
@@ -62,7 +62,6 @@ impl MainForm {
         }
         //Log in
         self.winodow_mode = WindowMode::Messaging;
-        return;
     }
 
     pub fn signup_view<'a>(&self) -> iced::Element<'a, Message> {
