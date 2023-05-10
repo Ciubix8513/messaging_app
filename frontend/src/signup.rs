@@ -32,6 +32,14 @@ impl MainForm {
                 "Password must be at least 8 characters long".to_string();
             return;
         }
+        //Validate email
+        let re = crate::regex::email_regex();
+        if !re.is_match(&self.signup_data.email_textbox){
+            self.signup_data.show_error_message = true;
+            self.signup_data.error_message =
+                "Invalid email adress".to_string();
+            return;
+        }
         //Passed all the checks, do the request
         let body = AddUser {
             username: self.signup_data.username_textbox.clone(),
@@ -52,8 +60,6 @@ impl MainForm {
             self.signup_data.error_message = response.text().unwrap();
             return;
         }
-        //Clear data
-        self.signup_data = SignupData::default();
         //Log in
         self.winodow_mode = WindowMode::Messaging;
         return;
