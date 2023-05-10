@@ -54,7 +54,7 @@ fn main() -> Result<(), iced::Error> {
 
     let mut settings = Settings::default();
     settings.window.resizable = false;
-    settings.window.size = (600, 480);
+    settings.window.size = (900, 720);
     main_window::MainForm::run(settings)?;
     println!("Quit");
 

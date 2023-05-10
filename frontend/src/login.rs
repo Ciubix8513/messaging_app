@@ -36,6 +36,7 @@ impl MainForm {
 
         //Login
         self.winodow_mode = WindowMode::Messaging;
+        self.update_chat_list();
     }
     pub fn login_view<'a>(&self) -> iced::Element<'a, Message> {
         let login_text = text("Login").size(40);

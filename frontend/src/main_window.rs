@@ -29,7 +29,12 @@ pub enum Message {
     SignupPasswordChanged(String, usize),
     BackButtonPressed,
     SignupButtonPressed,
+    //Messaging
     LogoutButtonPressed,
+    CreateChatButtonPressed,
+    CloseCreateChatModal,
+    ConfirmCreateChat,
+    CreateChatModalTextChange(String),
 }
 
 impl Sandbox for MainForm {
@@ -57,6 +62,13 @@ impl Sandbox for MainForm {
             Message::SignupPasswordChanged(v, i) => self.signup_data.password_textbox[i] = v,
             Message::SignupButtonPressed => self.signup(),
             Message::LogoutButtonPressed => self.logout(),
+            Message::CreateChatButtonPressed => {
+                self.messaging_data.create_chat_text.clear();
+                self.messaging_data.show_create_chat_modal = true
+            }
+            Message::CloseCreateChatModal => self.messaging_data.show_create_chat_modal = false,
+            Message::ConfirmCreateChat => self.messaging_data.show_create_chat_modal = false,
+            Message::CreateChatModalTextChange(v) => self.messaging_data.create_chat_text = v,
         }
     }
 

@@ -74,6 +74,7 @@ impl MainForm {
             .unwrap();
         //Log in
         self.winodow_mode = WindowMode::Messaging;
+        self.update_chat_list();
     }
 
     pub fn signup_view<'a>(&self) -> iced::Element<'a, Message> {
