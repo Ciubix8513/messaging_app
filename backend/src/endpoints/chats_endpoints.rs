@@ -16,7 +16,7 @@ async fn create_chat(
 ) -> impl Responder {
     let sender_id = is_logged_in(&session);
     if sender_id.is_err() {
-        return HttpResponse::Unauthorized();
+        return HttpResponse::Unauthorized().body("");
     }
     let sender_id: i32 = sender_id.unwrap();
 
@@ -36,7 +36,7 @@ async fn create_chat(
             .execute(connection)
     };
     match result {
-        Err(_) => return HttpResponse::InternalServerError(),
+        Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
         Ok(_) => (),
     }
     let result = {
@@ -45,11 +45,11 @@ async fn create_chat(
 
         let id: Result<i32, _> = gc::group_chats
             .select(gc::chat_id)
-            .filter(gc::created_at.eq(values.created_at))
             .filter(gc::created_by.eq(values.created_by))
+            .filter(gc::chat_name.eq(values.chat_name))
             .first(connection);
         if id.is_err() {
-            return HttpResponse::InternalServerError();
+            return HttpResponse::InternalServerError().body(id.err().unwrap().to_string());
         }
 
         diesel::insert_into(gcm::group_chat_members)
@@ -60,9 +60,9 @@ async fn create_chat(
             .execute(connection)
     };
     if result.is_err() {
-        return HttpResponse::InternalServerError();
+        return HttpResponse::InternalServerError().body(result.err().unwrap().to_string());
     }
-    HttpResponse::Ok()
+    HttpResponse::Ok().body("")
 }
 
 #[post("/chats/exit")]
