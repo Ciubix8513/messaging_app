@@ -27,4 +27,6 @@ pub struct MessagingData {
     pub selected_chat: Option<i32>,
     pub show_create_chat_modal: bool,
     pub create_chat_text: String,
+    pub show_error_modal: bool,
+    pub error_message: String,
 }

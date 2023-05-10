@@ -35,6 +35,7 @@ pub enum Message {
     CloseCreateChatModal,
     ConfirmCreateChat,
     CreateChatModalTextChange(String),
+    ErrorModalClose,
 }
 
 impl Sandbox for MainForm {
@@ -69,6 +70,7 @@ impl Sandbox for MainForm {
             Message::CloseCreateChatModal => self.messaging_data.show_create_chat_modal = false,
             Message::ConfirmCreateChat => self.messaging_data.show_create_chat_modal = false,
             Message::CreateChatModalTextChange(v) => self.messaging_data.create_chat_text = v,
+            Message::ErrorModalClose => self.messaging_data.show_error_modal = false,
         }
     }
 

@@ -2,7 +2,7 @@ use common_structs::GetChat;
 use iced::{
     alignment::{self, Horizontal},
     widget::{button, column, container, row, text, text_input},
-    Length,
+    Color, Length,
 };
 use iced_aw::{Card, Modal};
 use reqwest::Method;
@@ -38,11 +38,11 @@ impl MainForm {
             )
             .send()
             .unwrap();
-        if !result.status().is_success() {
+        if !result.status().is_success() && result.status() != reqwest::StatusCode::NOT_FOUND {
             self.error_message(result.text().unwrap());
             return;
         }
-        let data: Vec<GetChat> = result.json().unwrap();
+        let data: Vec<GetChat> = result.json().unwrap_or(Vec::default());
         self.messaging_data.chats = data
             .iter()
             .map(|i| Chat {
@@ -53,7 +53,9 @@ impl MainForm {
     }
 
     pub fn error_message(&mut self, message: String) {
-        println!("ERROR {}", message)
+        println!("ERROR {}", message);
+        self.messaging_data.show_error_modal = true;
+        self.messaging_data.error_message = message;
     }
 
     pub fn logout(&mut self) {
@@ -125,7 +127,7 @@ impl MainForm {
         };
 
         let main_content = container(column![top_bar, side_bar]);
-        Modal::new(
+        let create_chat_modal = Modal::new(
             self.messaging_data.show_create_chat_modal,
             main_content,
             || {
@@ -151,7 +153,32 @@ impl MainForm {
             },
         )
         .backdrop(Message::CloseCreateChatModal)
-        .on_esc(Message::CloseCreateChatModal)
+        .on_esc(Message::CloseCreateChatModal);
+
+        Modal::new(
+            self.messaging_data.show_error_modal,
+            create_chat_modal,
+            || {
+                Card::new(
+                    text("Error"),
+                    text(format!(
+                        "Error:{}",
+                        self.messaging_data.error_message.clone()
+                    ))
+                    .style(Color::from_rgb(1.0, 0.0, 0.0)),
+                )
+                .foot(
+                    button(text("Ok").horizontal_alignment(Horizontal::Center))
+                        .width(Length::Fill)
+                        .on_press(Message::ErrorModalClose),
+                )
+                .max_width(250.0)
+                .on_close(Message::ErrorModalClose)
+                .into()
+            },
+        )
+        .backdrop(Message::ErrorModalClose)
+        .on_esc(Message::ErrorModalClose)
         .into()
     }
 }
