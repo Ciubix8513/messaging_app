@@ -41,6 +41,8 @@ pub enum Message {
     InviteButtonPressed,
     ConfirmInvite,
     InvitesButtonPressed,
+    DeclineInvite(i32),
+    AcceptInvite(i32),
 }
 
 impl Sandbox for MainForm {
@@ -105,6 +107,16 @@ impl Sandbox for MainForm {
             Message::InvitesButtonPressed => {
                 self.messaging_data.selected_chat = None;
                 self.messaging_data.mode = MessageViewMode::Invites;
+                self.update_invites_list();
+            }
+            Message::DeclineInvite(id) => {
+                self.decline_invite(id);
+                self.update_chat_list();
+                self.update_invites_list();
+            }
+            Message::AcceptInvite(id) => {
+                self.accept_invite(id);
+                self.update_chat_list();
                 self.update_invites_list();
             }
         }

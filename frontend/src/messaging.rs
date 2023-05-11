@@ -16,6 +16,70 @@ use crate::{
 };
 
 impl MainForm {
+    pub fn accept_invite(&mut self, id: i32) {
+        let result = CLIENT
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .post(grimoire::INVITES_ACCEPT.clone())
+            .header(
+                "cookie",
+                format!(
+                    "id={}",
+                    COOKIE_STORE
+                        .lock()
+                        .unwrap()
+                        .iter_unexpired()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .value()
+                ),
+            )
+            .json(&id)
+            .send()
+            .unwrap();
+        if !result.status().is_success() {
+            let status = result.status();
+            self.error_message(result.text().unwrap(), status);
+            return;
+        }
+        self.messaging_data.invites.retain(|i| i.invite_id != id);
+    }
+
+    pub fn decline_invite(&mut self, id: i32) {
+        let result = CLIENT
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .post(grimoire::INVITES_REJECT.clone())
+            .header(
+                "cookie",
+                format!(
+                    "id={}",
+                    COOKIE_STORE
+                        .lock()
+                        .unwrap()
+                        .iter_unexpired()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .value()
+                ),
+            )
+            .json(&id)
+            .send()
+            .unwrap();
+        if !result.status().is_success() {
+            let status = result.status();
+            self.error_message(result.text().unwrap(), status);
+            return;
+        }
+        self.messaging_data.invites.retain(|i| i.invite_id != id);
+    }
+
     pub fn send_invite(&mut self) {
         let body = SendInvite {
             chat_id: self.messaging_data.selected_chat.unwrap(),
@@ -285,9 +349,47 @@ impl MainForm {
             .style(Container::Box)
         };
         let main_view = match self.messaging_data.mode {
-            crate::window_structs::MessageViewMode::Messages => text("Will be done soon"),
-            crate::window_structs::MessageViewMode::Invites => text("WIP"),
-        };
+            crate::window_structs::MessageViewMode::Messages => {
+                container(scrollable(text("Will be done soon")))
+            }
+            crate::window_structs::MessageViewMode::Invites => container(
+                column![
+                    text("Invites:"),
+                    if !self.messaging_data.invites.is_empty() {
+                        scrollable(
+                            self.messaging_data
+                                .invites
+                                .iter()
+                                .map(|i| {
+                                    container({
+                                        let c_name = text(i.chat_name.clone());
+                                        let s_name =
+                                            text(format!("from: {}", i.sender_name.clone()));
+                                        let date = text(i.created_at)
+                                            .style(Color::from_rgb(0.3, 0.3, 0.3));
+                                        let accept_btn = button("Accpet")
+                                            .on_press(Message::AcceptInvite(i.invite_id));
+                                        let decline_btn = button("Decline")
+                                            .on_press(Message::DeclineInvite(i.invite_id));
+                                        column![
+                                            row![c_name, date].spacing(5),
+                                            s_name,
+                                            row![accept_btn, decline_btn].spacing(3)
+                                        ]
+                                        .spacing(5)
+                                    })
+                                    .padding(5)
+                                })
+                                .fold(Column::new(), |c, i| c.push(i)),
+                        )
+                    } else {
+                        scrollable(text("None"))
+                    }
+                ]
+                .spacing(10),
+            ),
+        }
+        .padding(10);
 
         let main_content = container(column![top_bar, row![side_bar, main_view]]);
         let text_input_modal = Modal::new(
