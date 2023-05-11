@@ -121,7 +121,7 @@ async fn get_chats(pool: web::Data<DbPool>, session: actix_session::Session) -> 
         use crate::schema::users::dsl as u;
 
         let result: Result<Vec<(i32, String, i32, String)>, _> = gcm::group_chat_members
-            .filter(gcm::chat_id.eq(sender_id))
+            .filter(gcm::user_id.eq(sender_id))
             .inner_join(gc::group_chats)
             .inner_join(u::users.on(u::user_id.eq(gc::created_by)))
             .select((gcm::chat_id, gc::chat_name, u::user_id, u::username))
