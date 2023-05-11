@@ -46,7 +46,7 @@ pub struct SendMessage {
     pub text: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct GetMessage {
     pub message_id: i32,
     pub user_id: i32,

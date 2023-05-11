@@ -5,7 +5,7 @@ use std::{
 
 use iced::{Application, Settings};
 use once_cell::sync::Lazy;
-use reqwest::blocking::Client;
+use reqwest::blocking;
 
 mod grimoire;
 mod login;
@@ -35,13 +35,16 @@ fn get_cookie_store_mutex() -> reqwest_cookie_store::CookieStoreMutex {
     };
     reqwest_cookie_store::CookieStoreMutex::new(cookie_store)
 }
-pub static CLIENT: Lazy<Arc<Mutex<Option<Client>>>> = Lazy::new(|| Arc::new(Mutex::new(None)));
+pub static CLIENT: Lazy<Arc<Mutex<Option<blocking::Client>>>> =
+    Lazy::new(|| Arc::new(Mutex::new(None)));
+pub static ASYNC_CLIENT: Lazy<Arc<Mutex<Option<reqwest::Client>>>> =
+    Lazy::new(|| Arc::new(Mutex::new(None)));
 pub static COOKIE_STORE: Lazy<Arc<reqwest_cookie_store::CookieStoreMutex>> =
     Lazy::new(|| Arc::new(get_cookie_store_mutex()));
 
 fn main() -> Result<(), iced::Error> {
     *CLIENT.lock().unwrap() = Some(
-        Client::builder()
+        blocking::Client::builder()
             .user_agent(concat!(
                 "messenger_app frontend / ",
                 env!("CARGO_PKG_VERSION")
@@ -51,7 +54,17 @@ fn main() -> Result<(), iced::Error> {
             .build()
             .unwrap(),
     );
-
+    *ASYNC_CLIENT.lock().unwrap() = Some(
+        reqwest::Client::builder()
+            .user_agent(concat!(
+                "messenger_app frontend / ",
+                env!("CARGO_PKG_VERSION")
+            ))
+            .cookie_store(true)
+            .cookie_provider(Arc::clone(&COOKIE_STORE))
+            .build()
+            .unwrap(),
+    );
     let mut settings = Settings::default();
     settings.window.resizable = false;
     settings.window.size = (900, 720);

@@ -49,8 +49,8 @@ impl MainForm {
             self.error_message(result.text().unwrap(), status);
             return;
         }
-        self.load_messages();
         self.messaging_data.current_message.clear();
+        self.load_messages();
     }
 
     pub fn accept_invite(&mut self, id: i32) {
@@ -289,9 +289,9 @@ impl MainForm {
         self.update_chat_list();
     }
 
-    pub fn load_messages(&mut self) {
+    pub fn load_messages(&mut self) -> bool {
         if self.messaging_data.selected_chat.is_none() {
-            return;
+            return false;
         }
         let result = CLIENT
             .lock()
@@ -319,9 +319,14 @@ impl MainForm {
         if !result.status().is_success() {
             let status = result.status();
             self.error_message(result.text().unwrap(), status);
-            return;
+            return false;
         }
-        self.messaging_data.messages = result.json::<Vec<GetMessage>>().unwrap();
+        let new = result.json::<Vec<GetMessage>>().unwrap();
+        if new.len() == self.messaging_data.messages.len() {
+            return false;
+        }
+        self.messaging_data.messages = new;
+        true
     }
 
     pub fn messaging_view(&self) -> iced::Element<'_, Message> {

@@ -18,3 +18,5 @@ pub static INVITES_ACCEPT: Lazy<Url> = Lazy::new(|| API_URL.join("/invites/accep
 pub static MESSAGES_SEND: Lazy<Url> = Lazy::new(|| API_URL.join("/messages/send").unwrap());
 pub static MESSAGES_GET: Lazy<Url> = Lazy::new(|| API_URL.join("/messages/get").unwrap());
 pub static USERS_ADD_USER: Lazy<Url> = Lazy::new(|| API_URL.join("/users/add-user").unwrap());
+
+pub static REFRESH_TIME: u64 = 2;
