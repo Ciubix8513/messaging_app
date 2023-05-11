@@ -38,15 +38,22 @@ pub async fn send_invite(
     }
     //Check if invitee exists
     //Invitee IS a real word btw
-    {
+    let r_id = {
         use crate::schema::users::dsl::*;
 
-        let result: Result<usize, _> = users.find(invite.recipient_id).execute(connection);
+        let result: Result<i32, _> = users
+            .filter(username.eq(invite.recipient_name.clone()))
+            .select(user_id)
+            .first(connection);
         match result {
             Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
-            Ok(0) => return HttpResponse::BadRequest().body("Invited user does not exist"),
+            // Ok(0) => return HttpResponse::BadRequest().body("Invited user does not exist"),
             _ => (),
         }
+        result.unwrap()
+    };
+    if sender_id == r_id {
+        return HttpResponse::BadRequest().body("Cannot send invite to yourself");
     }
 
     //Create invite
@@ -58,7 +65,7 @@ pub async fn send_invite(
             .values(Invite {
                 chat_id: invite.chat_id,
                 sender_id: s_id,
-                recipient_id: invite.recipient_id,
+                recipient_id: r_id,
                 created_at: chrono::Local::now().naive_utc(),
             })
             .execute(connection);
