@@ -1,3 +1,7 @@
+use common_structs::GetMessage;
+
+use crate::main_window::Message;
+
 #[derive(Default)]
 pub struct LoginData {
     pub login_textbox: String,
@@ -22,11 +26,28 @@ pub struct Chat {
 }
 
 #[derive(Default)]
+pub struct TextInputModalData {
+    pub title: String,
+    pub placeholder: String,
+    pub show_modal: bool,
+    pub modal_text: String,
+    pub message: Message,
+}
+
+#[derive(Default)]
+pub enum MessageViewMode {
+    #[default]
+    Messages,
+    Invites,
+}
+
+#[derive(Default)]
 pub struct MessagingData {
     pub chats: Vec<Chat>,
     pub selected_chat: Option<i32>,
-    pub show_create_chat_modal: bool,
-    pub create_chat_text: String,
+    pub textinput_modal_data: TextInputModalData,
     pub show_error_modal: bool,
     pub error_message: String,
+    pub messages: Vec<GetMessage>,
+    pub mode: MessageViewMode,
 }
