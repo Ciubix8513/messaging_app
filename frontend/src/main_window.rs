@@ -99,7 +99,11 @@ impl Sandbox for MainForm {
                 self.messaging_data.textinput_modal_data.message = Message::ConfirmInvite;
             }
             Message::ConfirmInvite => self.messaging_data.textinput_modal_data.show_modal = false,
-            Message::InvitesButtonPressed => self.messaging_data.mode = MessageViewMode::Invites,
+            Message::InvitesButtonPressed => {
+                self.messaging_data.selected_chat = None;
+                self.messaging_data.mode = MessageViewMode::Invites;
+                self.update_invites_list();
+            }
         }
     }
 

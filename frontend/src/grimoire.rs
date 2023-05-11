@@ -2,7 +2,7 @@
 use once_cell::sync::Lazy;
 use reqwest::Url;
 
-pub static API_URL: Lazy<Url> = Lazy::new(|| Url::parse("http://10.69.69.119:8080").unwrap());
+pub static API_URL: Lazy<Url> = Lazy::new(|| Url::parse("https://api.ciubix.xyz").unwrap());
 
 pub static AUTH_LOGIN: Lazy<Url> = Lazy::new(|| API_URL.join("/auth/login").unwrap());
 pub static AUTH_LOGOUT: Lazy<Url> = Lazy::new(|| API_URL.join("/auth/logout").unwrap());

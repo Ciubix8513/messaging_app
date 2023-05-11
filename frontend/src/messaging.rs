@@ -16,6 +16,38 @@ use crate::{
 };
 
 impl MainForm {
+    pub fn update_invites_list(&mut self) {
+        let result = CLIENT
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .get(grimoire::INVITES_GET.clone())
+            .header(
+                "cookie",
+                format!(
+                    "id={}",
+                    COOKIE_STORE
+                        .lock()
+                        .unwrap()
+                        .iter_unexpired()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .value()
+                ),
+            )
+            .send()
+            .unwrap();
+
+        if !result.status().is_success() && result.status() != reqwest::StatusCode::NOT_FOUND {
+            let status = result.status();
+            self.error_message(result.text().unwrap(), status);
+            return;
+        }
+        self.messaging_data.invites = result.json().unwrap_or(Vec::default());
+    }
+
     pub fn update_chat_list(&mut self) {
         let result = CLIENT
             .lock()

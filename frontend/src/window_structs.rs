@@ -1,4 +1,4 @@
-use common_structs::GetMessage;
+use common_structs::{GetInvites, GetMessage};
 
 use crate::main_window::Message;
 
@@ -49,5 +49,6 @@ pub struct MessagingData {
     pub show_error_modal: bool,
     pub error_message: String,
     pub messages: Vec<GetMessage>,
+    pub invites: Vec<GetInvites>,
     pub mode: MessageViewMode,
 }
