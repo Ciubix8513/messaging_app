@@ -1,4 +1,4 @@
-use common_structs::{GetChat, GetMessage, SendInvite};
+use common_structs::{GetChat, GetMessage, SendInvite, SendMessage};
 use iced::{
     alignment::{self, Horizontal},
     theme::Container,
@@ -16,6 +16,43 @@ use crate::{
 };
 
 impl MainForm {
+    pub fn send_message(&mut self) {
+        let body = SendMessage {
+            chat_id: self.messaging_data.selected_chat.unwrap(),
+            text: self.messaging_data.current_message.clone(),
+        };
+        let result = CLIENT
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .post(grimoire::MESSAGES_SEND.clone())
+            .header(
+                "cookie",
+                format!(
+                    "id={}",
+                    COOKIE_STORE
+                        .lock()
+                        .unwrap()
+                        .iter_unexpired()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .value()
+                ),
+            )
+            .json(&body)
+            .send()
+            .unwrap();
+        if !result.status().is_success() {
+            let status = result.status();
+            self.error_message(result.text().unwrap(), status);
+            return;
+        }
+        self.load_messages();
+        self.messaging_data.current_message.clear();
+    }
+
     pub fn accept_invite(&mut self, id: i32) {
         let result = CLIENT
             .lock()
@@ -352,7 +389,7 @@ impl MainForm {
         let main_view = match self.messaging_data.mode {
             crate::window_structs::MessageViewMode::Messages => {
                 if self.messaging_data.selected_chat.is_some() {
-                    container(
+                    container(column![
                         scrollable(
                             self.messaging_data
                                 .messages
@@ -365,8 +402,18 @@ impl MainForm {
                                 })
                                 .fold(Column::new(), |c, i| c.push(i)),
                         )
+                        .height(Length::Fill)
                         .id(SCROLLABLE_ID.clone()),
-                    )
+                        {
+                            let input = text_input("...", &self.messaging_data.current_message)
+                                .on_input(Message::MessageEdited);
+                            let mut send_button = button("Send");
+                            if !self.messaging_data.current_message.is_empty() {
+                                send_button = send_button.on_press(Message::SendMessage);
+                            }
+                            row![input, send_button].spacing(5)
+                        }
+                    ])
                 } else {
                     //Kinda hacky but it's fine
                     container(text(""))

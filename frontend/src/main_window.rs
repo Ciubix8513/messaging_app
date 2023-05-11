@@ -44,6 +44,8 @@ pub enum Message {
     InvitesButtonPressed,
     DeclineInvite(i32),
     AcceptInvite(i32),
+    MessageEdited(String),
+    SendMessage,
 }
 
 pub static SCROLLABLE_ID: Lazy<scrollable::Id> = Lazy::new(scrollable::Id::unique);
@@ -123,6 +125,8 @@ impl Application for MainForm {
                 self.update_chat_list();
                 self.update_invites_list();
             }
+            Message::MessageEdited(val) => self.messaging_data.current_message = val,
+            Message::SendMessage => self.send_message(),
         }
         Command::none()
     }

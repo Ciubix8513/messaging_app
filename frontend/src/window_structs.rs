@@ -51,4 +51,5 @@ pub struct MessagingData {
     pub messages: Vec<GetMessage>,
     pub invites: Vec<GetInvites>,
     pub mode: MessageViewMode,
+    pub current_message: String,
 }
