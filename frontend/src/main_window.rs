@@ -1,5 +1,6 @@
 use crate::window_structs::*;
-use iced::Sandbox;
+use iced::{executor, widget::scrollable, Application, Command};
+use once_cell::sync::Lazy;
 
 #[derive(Default)]
 pub enum WindowMode {
@@ -45,14 +46,16 @@ pub enum Message {
     AcceptInvite(i32),
 }
 
-impl Sandbox for MainForm {
+pub static SCROLLABLE_ID: Lazy<scrollable::Id> = Lazy::new(scrollable::Id::unique);
+
+impl Application for MainForm {
     type Message = Message;
 
     fn title(&self) -> String {
         String::from("Login")
     }
 
-    fn update(&mut self, message: Self::Message) {
+    fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
             //Login stuff
             Message::LoginChanged(v) => self.login_data.login_textbox = v,
@@ -91,7 +94,8 @@ impl Sandbox for MainForm {
             Message::SelectChat(val) => {
                 self.messaging_data.mode = MessageViewMode::Messages;
                 self.messaging_data.selected_chat = Some(val);
-                self.load_messages()
+                self.load_messages();
+                return scrollable::snap_to(SCROLLABLE_ID.clone(), scrollable::RelativeOffset::END);
             }
             Message::InviteButtonPressed => {
                 self.messaging_data.textinput_modal_data.modal_text.clear();
@@ -120,6 +124,7 @@ impl Sandbox for MainForm {
                 self.update_invites_list();
             }
         }
+        Command::none()
     }
 
     fn view(&self) -> iced::Element<'_, Self::Message> {
@@ -130,11 +135,17 @@ impl Sandbox for MainForm {
         }
     }
 
-    fn new() -> Self {
-        MainForm::default()
+    fn new(_flags: Self::Flags) -> (Self, Command<Message>) {
+        (MainForm::default(), Command::none())
     }
 
     fn theme(&self) -> iced::Theme {
         iced::Theme::Dark
     }
+
+    type Executor = executor::Default;
+
+    type Theme = iced::Theme;
+
+    type Flags = ();
 }

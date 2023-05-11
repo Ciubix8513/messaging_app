@@ -10,7 +10,7 @@ use reqwest::{Method, StatusCode};
 
 use crate::{
     grimoire,
-    main_window::{MainForm, Message, WindowMode},
+    main_window::{MainForm, Message, WindowMode, SCROLLABLE_ID},
     window_structs::{Chat, LoginData},
     CLIENT, COOKIE_STORE,
 };
@@ -348,9 +348,29 @@ impl MainForm {
             .padding(2)
             .style(Container::Box)
         };
+        let date_color = Color::from_rgb(0.6, 0.6, 0.6);
         let main_view = match self.messaging_data.mode {
             crate::window_structs::MessageViewMode::Messages => {
-                container(scrollable(text("Will be done soon")))
+                if self.messaging_data.selected_chat.is_some() {
+                    container(
+                        scrollable(
+                            self.messaging_data
+                                .messages
+                                .iter()
+                                .map(|i| {
+                                    let uname = text(&i.username);
+                                    let date = text(i.sent_at).style(date_color.clone());
+                                    let body = text(&i.message_text);
+                                    container(column![row![uname, date].spacing(5), body])
+                                })
+                                .fold(Column::new(), |c, i| c.push(i)),
+                        )
+                        .id(SCROLLABLE_ID.clone()),
+                    )
+                } else {
+                    //Kinda hacky but it's fine
+                    container(text(""))
+                }
             }
             crate::window_structs::MessageViewMode::Invites => container(
                 column![
@@ -365,8 +385,7 @@ impl MainForm {
                                         let c_name = text(i.chat_name.clone());
                                         let s_name =
                                             text(format!("from: {}", i.sender_name.clone()));
-                                        let date = text(i.created_at)
-                                            .style(Color::from_rgb(0.3, 0.3, 0.3));
+                                        let date = text(i.created_at).style(date_color.clone());
                                         let accept_btn = button("Accpet")
                                             .on_press(Message::AcceptInvite(i.invite_id));
                                         let decline_btn = button("Decline")
