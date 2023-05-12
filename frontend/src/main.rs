@@ -13,6 +13,7 @@ mod main_window;
 mod messaging;
 mod regex;
 mod signup;
+mod time_utils;
 mod window_structs;
 
 fn cookie_path() -> PathBuf {

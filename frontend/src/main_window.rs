@@ -103,7 +103,7 @@ impl Application for MainForm {
             Message::SelectChat(val) => {
                 self.messaging_data.mode = MessageViewMode::Messages;
                 self.messaging_data.selected_chat = Some(val);
-                self.load_messages();
+                self.load_messages(true);
                 return scrollable::snap_to(SCROLLABLE_ID.clone(), scrollable::RelativeOffset::END);
             }
             Message::InviteButtonPressed => {
@@ -138,11 +138,7 @@ impl Application for MainForm {
                 return scrollable::snap_to(SCROLLABLE_ID.clone(), scrollable::RelativeOffset::END);
             }
             Message::RefreshMessages(..) => {
-                // if self.messaging_data.messages.len() == msgs.len() {
-                //     return Command::none();
-                // }
-                // self.messaging_data.messages = msgs;
-                if self.load_messages() {
+                if self.load_messages(false) {
                     return scrollable::snap_to(
                         SCROLLABLE_ID.clone(),
                         scrollable::RelativeOffset::END,

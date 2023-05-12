@@ -11,6 +11,7 @@ use reqwest::{Method, StatusCode};
 use crate::{
     grimoire,
     main_window::{MainForm, Message, WindowMode, SCROLLABLE_ID},
+    time_utils::naive_utc_to_naive_local,
     window_structs::{Chat, LoginData},
     CLIENT, COOKIE_STORE,
 };
@@ -50,7 +51,7 @@ impl MainForm {
             return;
         }
         self.messaging_data.current_message.clear();
-        self.load_messages();
+        self.load_messages(false);
     }
 
     pub fn accept_invite(&mut self, id: i32) {
@@ -182,6 +183,9 @@ impl MainForm {
             return;
         }
         self.messaging_data.invites = result.json().unwrap_or(Vec::default());
+        self.messaging_data.invites.iter_mut().for_each(|i| {
+            i.created_at = naive_utc_to_naive_local(&i.created_at);
+        });
     }
 
     pub fn update_chat_list(&mut self) {
@@ -289,7 +293,7 @@ impl MainForm {
         self.update_chat_list();
     }
 
-    pub fn load_messages(&mut self) -> bool {
+    pub fn load_messages(&mut self, force: bool) -> bool {
         if self.messaging_data.selected_chat.is_none() {
             return false;
         }
@@ -322,10 +326,15 @@ impl MainForm {
             return false;
         }
         let new = result.json::<Vec<GetMessage>>().unwrap();
-        if new.len() == self.messaging_data.messages.len() {
+        if new.len() == self.messaging_data.messages.len() && !force {
             return false;
         }
         self.messaging_data.messages = new;
+
+        self.messaging_data.messages.iter_mut().for_each(|i| {
+            i.sent_at = naive_utc_to_naive_local(&i.sent_at);
+        });
+
         true
     }
 
