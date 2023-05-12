@@ -133,7 +133,10 @@ impl Application for MainForm {
                 self.update_invites_list();
             }
             Message::MessageEdited(val) => self.messaging_data.current_message = val,
-            Message::SendMessage => self.send_message(),
+            Message::SendMessage => {
+                self.send_message();
+                return scrollable::snap_to(SCROLLABLE_ID.clone(), scrollable::RelativeOffset::END);
+            }
             Message::RefreshMessages(..) => {
                 // if self.messaging_data.messages.len() == msgs.len() {
                 //     return Command::none();

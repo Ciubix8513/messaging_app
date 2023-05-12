@@ -3,7 +3,7 @@ use iced::{
     alignment::{self, Horizontal},
     theme::Container,
     widget::{button, column, container, row, scrollable, text, text_input, Column},
-    Color, Length,
+    Color, Length, Padding,
 };
 use iced_aw::{Card, Modal};
 use reqwest::{Method, StatusCode};
@@ -394,31 +394,45 @@ impl MainForm {
         let main_view = match self.messaging_data.mode {
             crate::window_structs::MessageViewMode::Messages => {
                 if self.messaging_data.selected_chat.is_some() {
-                    container(column![
-                        scrollable(
-                            self.messaging_data
-                                .messages
-                                .iter()
-                                .map(|i| {
-                                    let uname = text(&i.username);
-                                    let date = text(i.sent_at).style(date_color.clone());
-                                    let body = text(&i.message_text);
-                                    container(column![row![uname, date].spacing(5), body])
-                                })
-                                .fold(Column::new(), |c, i| c.push(i)),
-                        )
-                        .height(Length::Fill)
-                        .id(SCROLLABLE_ID.clone()),
-                        {
-                            let input = text_input("...", &self.messaging_data.current_message)
-                                .on_input(Message::MessageEdited);
-                            let mut send_button = button("Send");
-                            if !self.messaging_data.current_message.is_empty() {
-                                send_button = send_button.on_press(Message::SendMessage);
+                    container(
+                        column![
+                            scrollable(
+                                self.messaging_data
+                                    .messages
+                                    .iter()
+                                    .map(|i| {
+                                        let uname = text(&i.username);
+                                        let date = text(i.sent_at).style(date_color.clone());
+                                        let body = text(&i.message_text);
+                                        container(column![row![uname, date].spacing(5), body])
+                                    })
+                                    .fold(Column::new(), |c, i| c.push(i))
+                                    .spacing(10)
+                                    .padding(Padding {
+                                        right: 20.0,
+                                        bottom: 10.0,
+                                        left: 0.0,
+                                        top: 0.0
+                                    }),
+                            )
+                            .height(Length::Fill)
+                            .id(SCROLLABLE_ID.clone()),
+                            {
+                                let mut input =
+                                    text_input("...", &self.messaging_data.current_message)
+                                        .on_input(Message::MessageEdited);
+                                if !self.messaging_data.current_message.is_empty() {
+                                    input = input.on_submit(Message::SendMessage);
+                                }
+                                let mut send_button = button("Send");
+                                if !self.messaging_data.current_message.is_empty() {
+                                    send_button = send_button.on_press(Message::SendMessage);
+                                }
+                                row![input, send_button].spacing(5)
                             }
-                            row![input, send_button].spacing(5)
-                        }
-                    ])
+                        ]
+                        .spacing(2),
+                    )
                 } else {
                     //Kinda hacky but it's fine
                     container(text(""))
