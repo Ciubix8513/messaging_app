@@ -425,6 +425,7 @@ impl MainForm {
                                     }),
                             )
                             .height(Length::Fill)
+                            .width(Length::Fill)
                             .id(SCROLLABLE_ID.clone()),
                             {
                                 let mut input =
