@@ -1,7 +1,7 @@
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web::Data, App, HttpResponse, HttpServer, Responder};
 use dotenvy::dotenv;
-use std::env;
+use std::{env, fs::File, io::Write};
 
 use crate::endpoints::*;
 
@@ -28,8 +28,20 @@ async fn main() -> std::io::Result<()> {
         .expect("Port must be set")
         .parse()
         .expect("Invalid port number");
+
+    let key = std::fs::read(grimoire::COOKIE_KEY_FILENAME);
+
+    let secret_key = match key {
+        Ok(key) => Key::from(&key),
+        Err(_) => {
+            let k = Key::generate();
+            let mut f = File::create("Cookie.key").unwrap();
+            f.write_all(k.master()).unwrap();
+            k
+        }
+    };
+
     let pool = utils::establish_connection();
-    let secret_key = Key::generate();
 
     println!("Running server on {}:{}", ip, port);
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
