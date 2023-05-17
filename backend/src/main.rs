@@ -5,6 +5,7 @@ use std::{env, fs::File, io::Write};
 
 use crate::endpoints::*;
 
+mod encryption;
 mod endpoints;
 pub mod grimoire;
 pub mod models;

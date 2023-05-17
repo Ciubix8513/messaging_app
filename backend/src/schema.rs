@@ -23,7 +23,7 @@ diesel::table! {
         chat_name -> Varchar,
         created_at -> Datetime,
         created_by -> Integer,
-        key -> Nullable<Varchar>,
+        key -> Varchar,
     }
 }
 
