@@ -5,7 +5,6 @@ use common_lib::encryption::{
     decrypt_key, encrypt_data, encrypt_key, generate_aes_key, into_key, Key,
 };
 use diesel::{update, ExpressionMethods, QueryDsl, RunQueryDsl};
-use rand::Rng;
 
 use crate::DbPool;
 
@@ -66,7 +65,7 @@ fn encrypt_existing_messages(pool: DbPool, encryption_key: Key) {
     let messages = messages.iter().map(|i| {
         let key = keys[&i.1];
         let encrypted_message =
-            unsafe { String::from_utf8_unchecked(encrypt_data(&key, i.0.as_bytes())).to_string() };
+            unsafe { String::from_utf8_unchecked(encrypt_data(&key, i.0.as_bytes())) };
         (encrypted_message, i.2)
     });
 

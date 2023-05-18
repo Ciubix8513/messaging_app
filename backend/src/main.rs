@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web::Data, App, HttpResponse, HttpServer, Responder};
 use dotenvy::dotenv;

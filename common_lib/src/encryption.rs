@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+#![allow(clippy::missing_panics_doc)]
 use aes::{
     cipher::{
         generic_array::GenericArray, inout::InOutBuf, BlockDecrypt, BlockEncrypt, BlockSizeUser,
@@ -11,20 +11,13 @@ use rand::Rng;
 pub type Key = [u8; 32];
 const BLOCK_SIZE: usize = 16;
 
-pub fn generate_aes_key() -> Key {
-    let mut key = [0u8; 32]; // 256-bit key
-    let mut rng = rand::thread_rng();
-    rng.fill(&mut key);
-    key
-}
-
 //TANK YOU CHATGPT FOR THESE BLOCKS FUNCTIONS
 fn to_blocks(data: &[u8]) -> Vec<GenericArray<u8, <Aes256 as BlockSizeUser>::BlockSize>> {
     let num_blocks = (data.len() + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
     let padded_data = data
         .iter()
-        .cloned()
+        .copied()
         .chain(std::iter::repeat(0).take(num_blocks * BLOCK_SIZE - data.len()))
         .collect::<Vec<u8>>();
     padded_data
@@ -38,7 +31,7 @@ fn to_blocks(data: &[u8]) -> Vec<GenericArray<u8, <Aes256 as BlockSizeUser>::Blo
 }
 
 fn merge_blocks(
-    blocks: Vec<GenericArray<u8, <Aes256 as BlockSizeUser>::BlockSize>>,
+    blocks: &[GenericArray<u8, <Aes256 as BlockSizeUser>::BlockSize>],
     remove_padding: bool,
 ) -> Vec<u8> {
     let combined_data: Vec<u8> = blocks
@@ -50,8 +43,7 @@ fn merge_blocks(
         let last_non_zero = combined_data
             .iter()
             .rposition(|&byte| byte != 0)
-            .map(|index| index + 1)
-            .unwrap_or(0);
+            .map_or(0, |index| index + 1);
 
         combined_data[..last_non_zero].to_vec()
     } else {
@@ -59,6 +51,15 @@ fn merge_blocks(
     }
 }
 
+#[must_use]
+pub fn generate_aes_key() -> Key {
+    let mut key = [0u8; 32]; // 256-bit key
+    let mut rng = rand::thread_rng();
+    rng.fill(&mut key);
+    key
+}
+
+#[must_use]
 pub fn encrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
     let cipher = Aes256Enc::new_from_slice(key).unwrap();
 
@@ -68,9 +69,10 @@ pub fn encrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
     let in_out = InOutBuf::new(&blocks, &mut out).unwrap();
 
     cipher.encrypt_blocks_inout(in_out);
-    merge_blocks(out, false)
+    merge_blocks(&out, false)
 }
 
+#[must_use]
 pub fn decrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
     let cipher = Aes256Dec::new_from_slice(key).unwrap();
 
@@ -80,21 +82,24 @@ pub fn decrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
     let in_out = InOutBuf::new(&blocks, &mut out).unwrap();
 
     cipher.decrypt_blocks_inout(in_out);
-    merge_blocks(out, true)
+    merge_blocks(&out, true)
 }
 
+#[must_use]
 pub fn into_key(raw: &[u8]) -> Key {
     let mut out = [0; 32];
-    out[..32].copy_from_slice(&raw);
+    out[..32].copy_from_slice(raw);
     out
 }
 
 //Encrypts key using encrypt_key
+#[must_use]
 pub fn encrypt_key(key: &Key, encryption_key: &Key) -> Key {
     let encrypted_key = encrypt_data(encryption_key, key);
     into_key(&encrypted_key)
 }
 //Encrypts key using encrypt_key
+#[must_use]
 pub fn decrypt_key(encrypted_key: &Key, encryption_key: &Key) -> Key {
     let decrypted_key = decrypt_data(encryption_key, encrypted_key);
     into_key(&decrypted_key)
