@@ -5,6 +5,10 @@ use rand::Rng;
 
 use crate::DbPool;
 
+//Encrypts the chat keys
+//If the old key is not provided assumes that the messages were not encrypted previously and
+//generates chat keys and encrypts all the messages
+fn deploy(new_key: Key, old_key: Option<Key>) {}
 
 //Generates new keys for all group chats, overrides the old ones
 //DO NOT USE IF THERE ARE ENCRYPTED MESSAGES IN THE DATABASE
@@ -19,8 +23,11 @@ fn generate_keys(pool: DbPool) {
     for i in ids {
         update(group_chats)
             .filter(chat_id.eq(i.0))
-            .set(key.eq::<String>(i.1.iter().map(|i| *i as char).collect()))
+            .set(key.eq::<String>(i.1.key.iter().map(|i| *i as char).collect()))
             .execute(connection)
             .unwrap();
     }
 }
+
+//Encrypts all messages in the database with their chat keys
+fn encrypt_existing_messages() {}
