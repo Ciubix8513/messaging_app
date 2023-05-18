@@ -83,19 +83,21 @@ pub fn decrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
     merge_blocks(out, true)
 }
 
+pub fn into_key(raw: &[u8]) -> Key {
+    let mut out = [0; 32];
+    out[..32].copy_from_slice(&raw);
+    out
+}
+
 //Encrypts key using encrypt_key
 pub fn encrypt_key(key: &Key, encryption_key: &Key) -> Key {
-    let mut out = [0; 32];
     let encrypted_key = encrypt_data(encryption_key, key);
-    out[..32].copy_from_slice(&encrypted_key);
-    out
+    into_key(&encrypted_key)
 }
 //Encrypts key using encrypt_key
 pub fn decrypt_key(encrypted_key: &Key, encryption_key: &Key) -> Key {
-    let mut out = [0; 32];
     let decrypted_key = decrypt_data(encryption_key, encrypted_key);
-    out[..32].copy_from_slice(&decrypted_key);
-    out
+    into_key(&decrypted_key)
 }
 
 #[test]
@@ -140,7 +142,6 @@ fn test_encrypt_decrypt_key() {
     let key_b = generate_aes_key();
 
     let encrypted_key = encrypt_key(&key_a, &key_b);
-
     let decrypted_key = decrypt_key(&encrypted_key, &key_b);
 
     assert_eq!(key_a, decrypted_key);
