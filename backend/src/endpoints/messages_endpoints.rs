@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use chrono::{Local, NaiveDateTime};
-use common_structs::{GetMessage, SendMessage};
+use common_lib::{GetMessage, SendMessage};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde_derive::Deserialize;
 

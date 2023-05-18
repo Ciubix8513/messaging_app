@@ -3,7 +3,7 @@ resolver = "2"
 members = [
   "frontend",
   "backend",
-  "common_structs"
+  "common_lib"
 ]
 [workspace.package]
 version = "0.1.0"

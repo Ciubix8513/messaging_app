@@ -1,17 +1,10 @@
 #![allow(unused)]
+use common_lib::encryption::{generate_aes_key, Key};
 use diesel::{update, ExpressionMethods, QueryDsl, RunQueryDsl};
 use rand::Rng;
 
 use crate::DbPool;
 
-pub type Key = [u8; 32];
-
-fn generate_aes_key() -> Key {
-    let mut key = [0u8; 32]; // 256-bit key
-    let mut rng = rand::thread_rng();
-    rng.fill(&mut key);
-    key
-}
 
 //Generates new keys for all group chats, overrides the old ones
 //DO NOT USE IF THERE ARE ENCRYPTED MESSAGES IN THE DATABASE

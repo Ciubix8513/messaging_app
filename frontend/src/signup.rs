@@ -1,4 +1,4 @@
-use common_structs::{AddUser, Login};
+use common_lib::{AddUser, Login};
 use iced::{
     widget::{button, column, container, text, text_input},
     Alignment, Color, Length,

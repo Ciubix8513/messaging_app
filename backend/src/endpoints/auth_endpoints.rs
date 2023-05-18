@@ -1,6 +1,6 @@
 use actix_web::{delete, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use common_structs::{ChangePassword, Login, UserData};
+use common_lib::{ChangePassword, Login, UserData};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use password_hash::Encoding;
 

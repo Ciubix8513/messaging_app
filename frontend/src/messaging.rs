@@ -1,4 +1,4 @@
-use common_structs::{GetChat, GetMessage, SendInvite, SendMessage};
+use common_lib::{GetChat, GetMessage, SendInvite, SendMessage};
 use iced::{
     alignment::{self, Horizontal},
     theme::Container,

@@ -1,4 +1,4 @@
-use common_structs::{GetInvites, GetMessage};
+use common_lib::{GetInvites, GetMessage};
 
 use crate::main_window::Message;
 
