@@ -83,6 +83,21 @@ pub fn decrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
     merge_blocks(out, true)
 }
 
+//Encrypts key using encrypt_key
+pub fn encrypt_key(key: &Key, encryption_key: &Key) -> Key {
+    let mut out = [0; 32];
+    let encrypted_key = encrypt_data(encryption_key, key);
+    out[..32].copy_from_slice(&encrypted_key);
+    out
+}
+//Encrypts key using encrypt_key
+pub fn decrypt_key(encrypted_key: &Key, encryption_key: &Key) -> Key {
+    let mut out = [0; 32];
+    let decrypted_key = decrypt_data(encryption_key, encrypted_key);
+    out[..32].copy_from_slice(&decrypted_key);
+    out
+}
+
 #[test]
 fn test_encrypt() {
     let key = generate_aes_key();
@@ -117,4 +132,16 @@ fn test_encrypt_decrypt_long() {
 
     let decrypted = String::from_utf8(decrypt_data(&key, &encrypted_msg)).unwrap();
     assert_eq!(data, decrypted);
+}
+
+#[test]
+fn test_encrypt_decrypt_key() {
+    let key_a = generate_aes_key();
+    let key_b = generate_aes_key();
+
+    let encrypted_key = encrypt_key(&key_a, &key_b);
+
+    let decrypted_key = decrypt_key(&encrypted_key, &key_b);
+
+    assert_eq!(key_a, decrypted_key);
 }
