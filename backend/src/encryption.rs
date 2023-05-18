@@ -11,7 +11,7 @@ use crate::DbPool;
 //Encrypts the chat keys
 //If the old key is not provided assumes that the messages were not encrypted previously and
 //generates chat keys and encrypts all the messages
-fn deploy(new_key: Key, old_key: Option<Key>, pool: &DbPool) {
+pub fn deploy(new_key: Key, old_key: Option<Key>, pool: &DbPool) {
     match old_key {
         Some(key) => reencrypt_keys(pool, new_key, key),
         //Assume the db wasn't previously encrypted and contains plain text messages

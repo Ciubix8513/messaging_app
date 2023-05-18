@@ -1,3 +1,4 @@
-pub static USER_ID_KEY: &str = "user_id";
-pub static USERNAME_KEY: &str = "username";
-pub static COOKIE_KEY_FILENAME: &str = "Cookie.key";
+pub const USER_ID_KEY: &str = "user_id";
+pub const USERNAME_KEY: &str = "username";
+pub const COOKIE_KEY_FILENAME: &str = "Cookie.key";
+pub const OLD_KEY_FILENAME: &str = "Old.key";
