@@ -1,5 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 
+pub mod encryption;
+
 #[derive(Serialize, Deserialize)]
 pub struct AddUser {
     pub username: String,
