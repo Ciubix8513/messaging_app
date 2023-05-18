@@ -1,99 +1,120 @@
-use crypto::{
-    aes, blockmodes,
-    buffer::{BufferResult, ReadBuffer, RefReadBuffer, RefWriteBuffer, WriteBuffer},
+#![allow(unused_variables)]
+use aes::{
+    cipher::{
+        generic_array::GenericArray, inout::InOutBuf, BlockDecrypt, BlockEncrypt, BlockSizeUser,
+        KeyInit,
+    },
+    Aes256, Aes256Dec, Aes256Enc,
 };
 use rand::Rng;
 
-pub struct Key {
-    pub key: [u8; 32],
-    pub length: aes::KeySize,
-}
+pub type Key = [u8; 32];
+const BLOCK_SIZE: usize = 16;
 
 pub fn generate_aes_key() -> Key {
     let mut key = [0u8; 32]; // 256-bit key
     let mut rng = rand::thread_rng();
     rng.fill(&mut key);
-    Key {
-        key,
-        length: aes::KeySize::KeySize256,
-    }
-}
-//
-//Encrypts a message with a key
-pub fn encrypt_message(key: &Key, message: String) -> String {
-    //Using ecb for better parallelization, cause I don't think I need the extra security of cbc
-    //Need to add padding bc messages can be of wrong length
-    let mut cipher = aes::ecb_encryptor(key.length, &key.key, blockmodes::PkcsPadding);
-
-    let mut out = Vec::new();
-    let mut read_buf = RefReadBuffer::new(message.as_bytes());
-    let mut buffer = [0; 4096];
-    let mut write_buf = RefWriteBuffer::new(&mut buffer);
-
-    loop {
-        let result = cipher.encrypt(&mut read_buf, &mut write_buf, true).unwrap();
-        out.extend(
-            write_buf
-                .take_read_buffer()
-                .take_remaining()
-                .iter()
-                .map(|&i| i),
-        );
-        match result {
-            BufferResult::BufferUnderflow => break,
-            _ => {}
-        }
-    }
-
-    //While I don't know if it's valid utf8 i don't really care, so it SHOULD be fine
-    //Famous last words lol
-    unsafe { String::from_utf8_unchecked(out) }
+    key
 }
 
-pub fn decrypt_message(key: &Key, message: &[u8]) -> String {
-    let mut cipher = aes::ecb_decryptor(key.length, &key.key, blockmodes::PkcsPadding);
+//TANK YOU CHATGPT FOR THESE BLOCKS FUNCTIONS
+fn to_blocks(data: &[u8]) -> Vec<GenericArray<u8, <Aes256 as BlockSizeUser>::BlockSize>> {
+    let num_blocks = (data.len() + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    let mut out = Vec::new();
-    let mut read_buf = RefReadBuffer::new(message);
-    let mut buffer = [0; 4096];
-    let mut write_buf = RefWriteBuffer::new(&mut buffer);
+    let padded_data = data
+        .iter()
+        .cloned()
+        .chain(std::iter::repeat(0).take(num_blocks * BLOCK_SIZE - data.len()))
+        .collect::<Vec<u8>>();
+    padded_data
+        .chunks(BLOCK_SIZE)
+        .map(|i| {
+            let mut block = [0; BLOCK_SIZE];
+            block[..BLOCK_SIZE].copy_from_slice(i);
+            GenericArray::from(block)
+        })
+        .collect()
+}
 
-    loop {
-        let result = cipher.decrypt(&mut read_buf, &mut write_buf, true).unwrap();
-        out.extend(
-            write_buf
-                .take_read_buffer()
-                .take_remaining()
-                .iter()
-                .map(|&i| i),
-        );
-        match result {
-            BufferResult::BufferUnderflow => break,
-            _ => {}
-        }
+fn merge_blocks(
+    blocks: Vec<GenericArray<u8, <Aes256 as BlockSizeUser>::BlockSize>>,
+    remove_padding: bool,
+) -> Vec<u8> {
+    let combined_data: Vec<u8> = blocks
+        .iter()
+        .flat_map(|block| block.iter().copied())
+        .collect();
+
+    if remove_padding {
+        let last_non_zero = combined_data
+            .iter()
+            .rposition(|&byte| byte != 0)
+            .map(|index| index + 1)
+            .unwrap_or(0);
+
+        combined_data[..last_non_zero].to_vec()
+    } else {
+        combined_data
     }
+}
 
-    String::from_utf8(out).unwrap()
+pub fn encrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
+    let cipher = Aes256Enc::new_from_slice(key).unwrap();
+
+    let blocks = to_blocks(data);
+    let mut out = Vec::new();
+    out.resize(blocks.len(), GenericArray::from([0; BLOCK_SIZE]));
+    let in_out = InOutBuf::new(&blocks, &mut out).unwrap();
+
+    cipher.encrypt_blocks_inout(in_out);
+    merge_blocks(out, false)
+}
+
+pub fn decrypt_data(key: &Key, data: &[u8]) -> Vec<u8> {
+    let cipher = Aes256Dec::new_from_slice(key).unwrap();
+
+    let blocks = to_blocks(data);
+    let mut out = Vec::new();
+    out.resize(blocks.len(), GenericArray::from([0; BLOCK_SIZE]));
+    let in_out = InOutBuf::new(&blocks, &mut out).unwrap();
+
+    cipher.decrypt_blocks_inout(in_out);
+    merge_blocks(out, true)
 }
 
 #[test]
 fn test_encrypt() {
     let key = generate_aes_key();
-    let msg = "Hello world!".to_string();
+    let data = "Hello world!";
 
-    let encrypted_msg = encrypt_message(&key, msg);
-    assert_ne!(encrypted_msg.len(), 0);
+    let encrypted_data = encrypt_data(&key, data.as_bytes());
+    assert_ne!(encrypted_data.len(), 0);
 }
 
 #[test]
 fn test_decrypt() {
     let key = generate_aes_key();
-    let msg = "Hello world!".to_string();
+    let data = "Hello world!";
 
-    let encrypted_msg = encrypt_message(&key, msg.clone());
+    let encrypted_data = encrypt_data(&key, data.as_bytes());
+    assert_ne!(encrypted_data.len(), 0);
+    println!("Encrypted message length: {}", encrypted_data.len());
+
+    let decrypted = String::from_utf8(decrypt_data(&key, &encrypted_data)).unwrap();
+    assert_eq!(data, decrypted);
+}
+
+#[test]
+fn test_encrypt_decrypt_long() {
+    //Taking the BIGGEST file
+    let data = include_str!("../../frontend/src/messaging.rs");
+    let key = generate_aes_key();
+
+    let encrypted_msg = encrypt_data(&key, data.as_bytes());
     assert_ne!(encrypted_msg.len(), 0);
     println!("Encrypted message length: {}", encrypted_msg.len());
 
-    let decrypted = decrypt_message(&key, &encrypted_msg.as_bytes());
-    assert_eq!(msg, decrypted);
+    let decrypted = String::from_utf8(decrypt_data(&key, &encrypted_msg)).unwrap();
+    assert_eq!(data, decrypted);
 }

@@ -23,11 +23,22 @@ fn generate_keys(pool: DbPool) {
     for i in ids {
         update(group_chats)
             .filter(chat_id.eq(i.0))
-            .set(key.eq::<String>(i.1.key.iter().map(|i| *i as char).collect()))
+            .set(key.eq::<String>(i.1.iter().map(|i| *i as char).collect()))
             .execute(connection)
             .unwrap();
     }
 }
 
 //Encrypts all messages in the database with their chat keys
-fn encrypt_existing_messages() {}
+fn encrypt_existing_messages(pool: DbPool) {
+    use crate::schema::group_chats::dsl as gc;
+    use crate::schema::messages::dsl as msgs;
+    let connection = &mut pool.get().unwrap();
+
+    let messages: Vec<(String, i32)> = msgs::messages
+        .inner_join(gc::group_chats)
+        .select((msgs::message_text, msgs::chat_id))
+        .load(connection)
+        .unwrap();
+    // let keys : Vec<w>
+}
