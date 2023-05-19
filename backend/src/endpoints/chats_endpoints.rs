@@ -150,7 +150,7 @@ async fn get_chats(pool: web::Data<DbPool>, session: actix_session::Session) -> 
     }
 }
 
-#[get("chats/get_key")]
+#[get("chats/get-key")]
 async fn get_key(
     pool: web::Data<DbPool>,
     key: web::Data<Key>,

@@ -86,7 +86,7 @@ pub async fn get_messages(
 
         let result: Result<Vec<(i32, i32, String, String, NaiveDateTime)>, _> = msg::messages
             .filter(msg::chat_id.eq(param.id))
-            .order_by(msg::sent_at.desc())
+            .order_by(msg::sent_at.asc())
             .inner_join(us::users)
             .select((
                 msg::message_id,

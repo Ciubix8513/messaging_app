@@ -85,6 +85,7 @@ async fn main() -> std::io::Result<()> {
             .service(send_message)
             .service(get_messages)
             .service(get_chats)
+            .service(get_key)
             //Wrap "Wraps" all the registered services in itself
             .wrap(middleware::Logger::default())
     })
