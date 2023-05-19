@@ -1,4 +1,7 @@
-use common_lib::{encryption::into_key, GetChat, GetMessage, SendInvite, SendMessage};
+use common_lib::{
+    encryption::{decrypt_base64_to_string, encrypt_string_to_base64, into_key},
+    GetChat, GetMessage, SendInvite, SendMessage,
+};
 use iced::{
     alignment::{self, Horizontal},
     theme::Container,
@@ -61,7 +64,10 @@ impl MainForm {
     pub fn send_message(&mut self) {
         let body = SendMessage {
             chat_id: self.messaging_data.selected_chat.unwrap(),
-            text: self.messaging_data.current_message.clone(),
+            text: encrypt_string_to_base64(
+                &self.messaging_data.current_message.clone(),
+                &self.messaging_data.chat_key,
+            ),
         };
         let result = CLIENT
             .lock()
@@ -370,11 +376,20 @@ impl MainForm {
         if new.len() == self.messaging_data.messages.len() && !force {
             return false;
         }
-        self.messaging_data.messages = new;
 
-        self.messaging_data.messages.iter_mut().for_each(|i| {
-            i.sent_at = naive_utc_to_naive_local(&i.sent_at);
-        });
+        let new = new[self.messaging_data.messages.len()..]
+            .iter()
+            .map(|i| GetMessage {
+                message_id: i.message_id,
+                user_id: i.user_id,
+                username: i.username.clone(),
+                message_text: decrypt_base64_to_string(
+                    &i.message_text,
+                    &self.messaging_data.chat_key,
+                ),
+                sent_at: naive_utc_to_naive_local(&i.sent_at),
+            });
+        self.messaging_data.messages.append(&mut new.collect());
 
         true
     }
