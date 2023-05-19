@@ -8,7 +8,7 @@ use crate::{models::CreateMessage, utils::is_logged_in, DbPool};
 
 #[derive(Deserialize)]
 pub struct Param {
-    id: i32,
+    pub id: i32,
 }
 
 #[post("/messages/send")]

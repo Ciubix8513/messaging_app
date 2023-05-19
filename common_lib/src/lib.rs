@@ -19,6 +19,7 @@ pub struct Login {
 pub struct UserData {
     pub username: String,
     pub user_id: i32,
+    pub private_key: String,
 }
 
 #[derive(Serialize, Deserialize)]
