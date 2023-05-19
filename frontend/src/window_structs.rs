@@ -1,4 +1,4 @@
-use common_lib::{GetInvites, GetMessage};
+use common_lib::{encryption::Key, GetInvites, GetMessage};
 
 use crate::main_window::Message;
 
@@ -52,4 +52,6 @@ pub struct MessagingData {
     pub invites: Vec<GetInvites>,
     pub mode: MessageViewMode,
     pub current_message: String,
+    pub key: Option<rsa::RsaPrivateKey>,
+    pub chat_key: Key,
 }

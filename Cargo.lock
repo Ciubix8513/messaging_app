@@ -1413,9 +1413,11 @@ dependencies = [
  "iced_aw",
  "lazy_static",
  "once_cell",
+ "rand",
  "regex",
  "reqwest",
  "reqwest_cookie_store",
+ "rsa",
  "serde_json",
 ]
 

@@ -1,4 +1,4 @@
-use common_lib::{GetChat, GetMessage, SendInvite, SendMessage};
+use common_lib::{encryption::into_key, GetChat, GetMessage, SendInvite, SendMessage};
 use iced::{
     alignment::{self, Horizontal},
     theme::Container,
@@ -17,6 +17,47 @@ use crate::{
 };
 
 impl MainForm {
+    pub fn get_chat_key(&mut self) {
+        let result = CLIENT
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .get(grimoire::CHATS_GET_KEY.clone())
+            .header(
+                "cookie",
+                format!(
+                    "id={}",
+                    COOKIE_STORE
+                        .lock()
+                        .unwrap()
+                        .iter_unexpired()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .value()
+                ),
+            )
+            .query(&[("id", self.messaging_data.selected_chat)])
+            .send()
+            .unwrap();
+        if !result.status().is_success() {
+            let status = result.status();
+            self.error_message(result.text().unwrap(), status);
+            return;
+        }
+        let encrypted_key = result.json::<Vec<u8>>().unwrap();
+        let k = self
+            .messaging_data
+            .key
+            .clone()
+            .unwrap()
+            .decrypt(rsa::Pkcs1v15Encrypt, &encrypted_key)
+            .unwrap();
+
+        self.messaging_data.chat_key = into_key(&k);
+    }
+
     pub fn send_message(&mut self) {
         let body = SendMessage {
             chat_id: self.messaging_data.selected_chat.unwrap(),
