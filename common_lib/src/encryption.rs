@@ -6,6 +6,7 @@ use aes::{
     },
     Aes256, Aes256Dec, Aes256Enc,
 };
+use base64::Engine;
 use rand::Rng;
 
 pub const ENCODING_ENGINE: base64::engine::GeneralPurpose =
@@ -108,6 +109,19 @@ pub fn decrypt_key(encrypted_key: &Key, encryption_key: &Key) -> Key {
     into_key(&decrypted_key)
 }
 
+#[must_use]
+pub fn decrypt_base64_to_string(encrypted_base64: &str, encryption_key: &Key) -> String {
+    let data = ENCODING_ENGINE.decode(encrypted_base64).unwrap();
+    let data = decrypt_data(encryption_key, &data);
+    String::from_utf8(data).unwrap()
+}
+
+#[must_use]
+pub fn encrypt_string_to_base64(string: &str, encryption_key: &Key) -> String {
+    let data = encrypt_data(encryption_key, string.as_bytes());
+    ENCODING_ENGINE.encode(data)
+}
+
 #[test]
 fn test_encrypt() {
     let key = generate_aes_key();
@@ -153,4 +167,15 @@ fn test_encrypt_decrypt_key() {
     let decrypted_key = decrypt_key(&encrypted_key, &key_b);
 
     assert_eq!(key_a, decrypted_key);
+}
+
+#[test]
+fn test_base64_encryption_decryption() {
+    let data = "Hello world!";
+    let key = generate_aes_key();
+
+    let encrypted = encrypt_string_to_base64(data, &key);
+    let decrypted = decrypt_base64_to_string(&encrypted, &key);
+
+    assert_eq!(data, decrypted);
 }
