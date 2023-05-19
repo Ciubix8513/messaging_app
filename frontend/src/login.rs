@@ -1,9 +1,10 @@
-use common_structs::Login;
+use common_lib::{Login, UserData};
 use iced::{
     widget::{button, column, container, row, text, text_input},
     Alignment, Color, Length,
 };
 use reqwest::Method;
+use rsa::pkcs8::DecodePrivateKey;
 
 use crate::{
     grimoire,
@@ -33,7 +34,10 @@ impl MainForm {
             self.login_data.password_textbox.clear();
             return;
         }
+        let response = response.json::<UserData>().unwrap();
 
+        self.messaging_data.key =
+            Some(rsa::RsaPrivateKey::from_pkcs8_pem(&response.private_key).unwrap());
         //Login
         self.winodow_mode = WindowMode::Messaging;
         self.update_chat_list();

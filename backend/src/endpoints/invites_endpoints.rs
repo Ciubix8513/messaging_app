@@ -1,5 +1,5 @@
 use actix_web::{post, web, HttpResponse, Responder};
-use common_structs::{GetInvites, SendInvite};
+use common_lib::{GetInvites, SendInvite};
 use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
 
 use crate::{

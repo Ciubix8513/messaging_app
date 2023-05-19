@@ -16,6 +16,7 @@ pub struct GroupChat {
     pub name: String,
     pub created_by: i32,
     pub creation_date: chrono::NaiveDateTime,
+    pub key: String,
 }
 
 #[derive(Queryable, Insertable)]

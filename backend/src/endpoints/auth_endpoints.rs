@@ -1,8 +1,9 @@
 use actix_web::{delete, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use common_structs::{ChangePassword, Login, UserData};
+use common_lib::{ChangePassword, Login, UserData};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use password_hash::Encoding;
+use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey};
 
 use crate::utils::{hash_password, is_logged_in};
 use crate::{grimoire, DbPool};
@@ -31,6 +32,12 @@ pub async fn login(
 
     match result {
         Ok(_) => {
+            let mut rng = rand::thread_rng();
+            let bits = 2048;
+
+            let priv_key = rsa::RsaPrivateKey::new(&mut rng, bits).unwrap();
+            let pub_key = rsa::RsaPublicKey::from(&priv_key);
+
             session.renew();
             session
                 .insert(grimoire::USER_ID_KEY, user.1)
@@ -38,10 +45,24 @@ pub async fn login(
             session
                 .insert(grimoire::USERNAME_KEY, login_info.username.clone())
                 .expect("Could not insert user id into session");
+            session
+                .insert(
+                    grimoire::PUBLIC_KEY_KEY,
+                    pub_key
+                        .to_public_key_pem(rsa::pkcs8::LineEnding::LF)
+                        .unwrap()
+                        .to_string(),
+                )
+                .expect("Could not insert private key");
+
             //User also gets a cookie
             HttpResponse::Ok().json(UserData {
                 username: login_info.username.clone(),
                 user_id: user.1,
+                private_key: priv_key
+                    .to_pkcs8_pem(rsa::pkcs8::LineEnding::LF)
+                    .unwrap()
+                    .to_string(),
             })
         }
         Err(_) => HttpResponse::BadRequest().body("Invalid username or password"),

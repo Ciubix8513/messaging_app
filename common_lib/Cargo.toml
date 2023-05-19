@@ -1,5 +1,5 @@
 [package]
-name = "common_structs"
+name = "common_lib"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,3 +9,6 @@ edition = "2021"
 serde = "1.0.162"
 serde_derive = "1.0.162"
 chrono = { version = "0.4.24", features = ["serde"] }
+rand = "0.8.5"
+aes = "0.8.2"
+base64 = "0.21.0"

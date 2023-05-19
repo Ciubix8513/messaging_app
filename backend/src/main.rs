@@ -1,10 +1,13 @@
+#![allow(clippy::type_complexity, clippy::wildcard_imports)]
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web::Data, App, HttpResponse, HttpServer, Responder};
+use common_lib::encryption::{generate_aes_key, into_key};
 use dotenvy::dotenv;
-use std::env;
+use std::{env, fs::File, io::Write};
 
 use crate::endpoints::*;
 
+mod encryption;
 mod endpoints;
 pub mod grimoire;
 pub mod models;
@@ -28,14 +31,40 @@ async fn main() -> std::io::Result<()> {
         .expect("Port must be set")
         .parse()
         .expect("Invalid port number");
+
+    let cookie_key = std::fs::read(grimoire::COOKIE_KEY_FILENAME);
+
+    let secret_key = match cookie_key {
+        Ok(key) => Key::from(&key),
+        Err(_) => {
+            let k = Key::generate();
+            let mut f = File::create(grimoire::COOKIE_KEY_FILENAME).unwrap();
+            f.write_all(k.master()).unwrap();
+            k
+        }
+    };
+
     let pool = utils::establish_connection();
-    let secret_key = Key::generate();
+
+    let old_key = std::fs::read(grimoire::OLD_KEY_FILENAME)
+        .ok()
+        .map(|k| into_key(&k));
+    let new_key = generate_aes_key();
+
+    encryption::deploy(new_key, old_key, &pool);
+
+    //Write key to use upon next start up
+    std::fs::write(grimoire::OLD_KEY_FILENAME, new_key).unwrap();
+    println!("Generated new key, please don't just leave it here");
 
     println!("Running server on {}:{}", ip, port);
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     HttpServer::new(move || {
         App::new()
+            //Deployment key
+            .app_data(Data::new(new_key))
+            //Db pool
             .app_data(Data::new(pool.clone()))
             .service(html_page)
             .service(login)
@@ -56,6 +85,7 @@ async fn main() -> std::io::Result<()> {
             .service(send_message)
             .service(get_messages)
             .service(get_chats)
+            .service(get_key)
             //Wrap "Wraps" all the registered services in itself
             .wrap(middleware::Logger::default())
     })

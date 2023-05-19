@@ -103,6 +103,8 @@ impl Application for MainForm {
             Message::SelectChat(val) => {
                 self.messaging_data.mode = MessageViewMode::Messages;
                 self.messaging_data.selected_chat = Some(val);
+                self.get_chat_key();
+                self.messaging_data.messages.clear();
                 self.load_messages(true);
                 return scrollable::snap_to(SCROLLABLE_ID.clone(), scrollable::RelativeOffset::END);
             }

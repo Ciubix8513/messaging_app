@@ -1,9 +1,10 @@
-use common_structs::{AddUser, Login};
+use common_lib::{AddUser, Login, UserData};
 use iced::{
     widget::{button, column, container, text, text_input},
     Alignment, Color, Length,
 };
 use reqwest::Method;
+use rsa::pkcs8::DecodePrivateKey;
 
 use crate::{
     grimoire,
@@ -63,7 +64,7 @@ impl MainForm {
             username: self.signup_data.username_textbox.clone(),
             password: self.signup_data.password_textbox[0].clone(),
         };
-        CLIENT
+        let response = CLIENT
             .lock()
             .unwrap()
             .as_ref()
@@ -71,7 +72,12 @@ impl MainForm {
             .request(Method::POST, grimoire::AUTH_LOGIN.clone())
             .json(&body)
             .send()
+            .unwrap()
+            .json::<UserData>()
             .unwrap();
+        self.messaging_data.key =
+            Some(rsa::RsaPrivateKey::from_pkcs8_pem(&response.private_key).unwrap());
+
         //Log in
         self.winodow_mode = WindowMode::Messaging;
         self.update_chat_list();

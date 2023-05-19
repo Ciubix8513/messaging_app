@@ -1,8 +1,15 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
-use common_structs::GetChat;
+use base64::Engine;
+use common_lib::{
+    encryption::{decrypt_key, into_key, Key, ENCODING_ENGINE},
+    GetChat,
+};
 use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
+use rsa::pkcs8::DecodePublicKey;
 
 use crate::{
+    endpoints::messages_endpoints::Param,
+    grimoire,
     models::{CreateChat, GroupChatMember},
     utils::is_logged_in,
     DbPool,
@@ -141,4 +148,62 @@ async fn get_chats(pool: web::Data<DbPool>, session: actix_session::Session) -> 
             Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
         }
     }
+}
+
+#[get("chats/get-key")]
+async fn get_key(
+    pool: web::Data<DbPool>,
+    key: web::Data<Key>,
+    session: actix_session::Session,
+    web::Query(param): web::Query<Param>,
+) -> impl Responder {
+    let sender_id = is_logged_in(&session);
+    if sender_id.is_err() {
+        return HttpResponse::Unauthorized().body("");
+    }
+    let sender_id: i32 = sender_id.unwrap();
+
+    let connection = &mut pool.get().unwrap();
+
+    {
+        use crate::schema::group_chat_members::dsl::*;
+
+        let result: Result<usize, _> = group_chat_members
+            .find((param.id, sender_id))
+            .execute(connection);
+        match result {
+            Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
+            Ok(0) => {
+                return HttpResponse::BadRequest().body(format!("No chat with id {}", param.id))
+            }
+            _ => (),
+        }
+    }
+
+    let k = {
+        use crate::schema::group_chats::dsl as gc;
+        into_key(
+            &ENCODING_ENGINE
+                .decode(
+                    gc::group_chats
+                        .filter(gc::chat_id.eq(param.id))
+                        .select(gc::key)
+                        .first::<String>(connection)
+                        .unwrap(),
+                )
+                .unwrap(),
+        )
+    };
+
+    let key = decrypt_key(&k, &key);
+    let pk = session
+        .get::<String>(grimoire::PUBLIC_KEY_KEY)
+        .unwrap()
+        .unwrap();
+    let pk = rsa::RsaPublicKey::from_public_key_pem(&pk).unwrap();
+    let mut rng = rand::thread_rng();
+
+    let encrypted_key = pk.encrypt(&mut rng, rsa::Pkcs1v15Encrypt, &key).unwrap();
+
+    HttpResponse::Ok().json(encrypted_key)
 }
