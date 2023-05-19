@@ -8,7 +8,10 @@ use aes::{
 };
 use rand::Rng;
 
+pub const ENCODING_ENGINE: base64::engine::GeneralPurpose =
+    base64::engine::general_purpose::STANDARD_NO_PAD;
 pub type Key = [u8; 32];
+
 const BLOCK_SIZE: usize = 16;
 
 //TANK YOU CHATGPT FOR THESE BLOCKS FUNCTIONS

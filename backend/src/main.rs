@@ -55,12 +55,16 @@ async fn main() -> std::io::Result<()> {
 
     //Write key to use upon next start up
     std::fs::write(grimoire::OLD_KEY_FILENAME, new_key).unwrap();
+    println!("Generated new key, please don't just leave it here");
 
     println!("Running server on {}:{}", ip, port);
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     HttpServer::new(move || {
         App::new()
+            //Deployment key
+            .app_data(Data::new(new_key))
+            //Db pool
             .app_data(Data::new(pool.clone()))
             .service(html_page)
             .service(login)
