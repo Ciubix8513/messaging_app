@@ -1,12 +1,16 @@
 #![allow(unused)]
 use std::collections::HashMap;
 
+use base64::Engine;
 use common_lib::encryption::{
     decrypt_key, encrypt_data, encrypt_key, generate_aes_key, into_key, Key,
 };
 use diesel::{update, ExpressionMethods, QueryDsl, RunQueryDsl};
 
 use crate::DbPool;
+
+const ENCODING_ENGINE: base64::engine::GeneralPurpose =
+    base64::engine::general_purpose::STANDARD_NO_PAD;
 
 //Encrypts the chat keys
 //If the old key is not provided assumes that the messages were not encrypted previously and
@@ -32,13 +36,17 @@ fn reencrypt_keys(pool: &DbPool, new_key: Key, old_key: Key) {
     let keys = keys.iter().map(|i| {
         (
             i.1,
-            encrypt_key(&decrypt_key(&into_key(i.0.as_bytes()), &old_key), &new_key),
+            encrypt_key(
+                &decrypt_key(&into_key(&ENCODING_ENGINE.decode(&i.0).unwrap()), &old_key),
+                &new_key,
+            ),
         )
     });
+
     for i in keys {
         update(group_chats)
             .filter(chat_id.eq(i.0))
-            .set(key.eq::<String>(i.1.iter().map(|i| *i as char).collect()))
+            .set(key.eq(ENCODING_ENGINE.encode(i.1)))
             .execute(connection)
             .unwrap();
     }
@@ -65,7 +73,7 @@ fn generate_keys(pool: &DbPool, encryption_key: Key) {
     for i in ids {
         update(group_chats)
             .filter(chat_id.eq(i.0))
-            .set(key.eq::<String>(i.1.iter().map(|i| *i as char).collect()))
+            .set(key.eq(ENCODING_ENGINE.encode(i.1)))
             .execute(connection)
             .unwrap();
     }
@@ -90,13 +98,20 @@ fn encrypt_existing_messages(pool: &DbPool, encryption_key: Key) {
 
     let keys = keys
         .iter()
-        .map(|i| (i.1, decrypt_key(&into_key(i.0.as_bytes()), &encryption_key)))
+        .map(|i| {
+            (
+                i.1,
+                decrypt_key(
+                    &into_key(&ENCODING_ENGINE.decode(&i.0).unwrap()),
+                    &encryption_key,
+                ),
+            )
+        })
         .collect::<HashMap<i32, Key>>();
 
     let messages = messages.iter().map(|i| {
         let key = keys[&i.1];
-        let encrypted_message =
-            unsafe { String::from_utf8_unchecked(encrypt_data(&key, i.0.as_bytes())) };
+        let encrypted_message = ENCODING_ENGINE.encode(encrypt_data(&key, i.0.as_bytes()));
         (encrypted_message, i.2)
     });
 
