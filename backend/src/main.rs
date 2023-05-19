@@ -1,4 +1,10 @@
-#![allow(clippy::type_complexity, clippy::wildcard_imports)]
+#![allow(
+    clippy::type_complexity,
+    clippy::wildcard_imports,
+    clippy::unused_async,
+    clippy::future_not_send,
+    clippy::option_if_let_else
+)]
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web::Data, App, HttpResponse, HttpServer, Responder};
 use common_lib::encryption::{generate_aes_key, into_key};
@@ -34,14 +40,13 @@ async fn main() -> std::io::Result<()> {
 
     let cookie_key = std::fs::read(grimoire::COOKIE_KEY_FILENAME);
 
-    let secret_key = match cookie_key {
-        Ok(key) => Key::from(&key),
-        Err(_) => {
-            let k = Key::generate();
-            let mut f = File::create(grimoire::COOKIE_KEY_FILENAME).unwrap();
-            f.write_all(k.master()).unwrap();
-            k
-        }
+    let secret_key = if let Ok(key) = cookie_key {
+        Key::from(&key)
+    } else {
+        let k = Key::generate();
+        let mut f = File::create(grimoire::COOKIE_KEY_FILENAME).unwrap();
+        f.write_all(k.master()).unwrap();
+        k
     };
 
     let pool = utils::establish_connection();
@@ -57,7 +62,7 @@ async fn main() -> std::io::Result<()> {
     std::fs::write(grimoire::OLD_KEY_FILENAME, new_key).unwrap();
     println!("Generated new key, please don't just leave it here");
 
-    println!("Running server on {}:{}", ip, port);
+    println!("Running server on {ip}:{port}");
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     HttpServer::new(move || {

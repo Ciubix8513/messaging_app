@@ -20,7 +20,7 @@ pub fn is_logged_in(session: &actix_session::Session) -> Result<i32, String> {
     match session.get(grimoire::USER_ID_KEY) {
         Ok(Some(id)) => Ok(id),
         Ok(None) => Err("No value".to_string()),
-        Err(e) => Err(format!("{}", e)),
+        Err(e) => Err(format!("{e}")),
     }
 }
 

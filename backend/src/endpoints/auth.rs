@@ -50,8 +50,7 @@ pub async fn login(
                     grimoire::PUBLIC_KEY_KEY,
                     pub_key
                         .to_public_key_pem(rsa::pkcs8::LineEnding::LF)
-                        .unwrap()
-                        .to_string(),
+                        .unwrap(),
                 )
                 .expect("Could not insert private key");
 

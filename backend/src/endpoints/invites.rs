@@ -45,10 +45,8 @@ pub async fn send_invite(
             .filter(username.eq(invite.recipient_name.clone()))
             .select(user_id)
             .first(connection);
-        match result {
-            Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
-            // Ok(0) => return HttpResponse::BadRequest().body("Invited user does not exist"),
-            _ => (),
+        if let Err(e) = result {
+            return HttpResponse::InternalServerError().body(e.to_string());
         }
         result.unwrap()
     };
@@ -117,7 +115,7 @@ async fn get_invites(session: actix_session::Session, pool: web::Data<DbPool>) -
                     })
                     .collect::<Vec<GetInvites>>(),
             ),
-            Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
+            Err(e) => HttpResponse::InternalServerError().body(format!("{e}")),
         }
     }
 }
@@ -179,7 +177,7 @@ pub async fn accept_invite(
                 c_id = res.chat_id;
             }
             Err(diesel::result::Error::NotFound) => return HttpResponse::BadRequest().body(""),
-            Err(e) => return HttpResponse::InternalServerError().body(format!("{}", e)),
+            Err(e) => return HttpResponse::InternalServerError().body(format!("{e}")),
         }
     }
 
@@ -208,7 +206,7 @@ pub async fn accept_invite(
             .execute(connection);
         match result {
             Ok(_) => HttpResponse::Ok().body(""),
-            Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
+            Err(e) => HttpResponse::InternalServerError().body(format!("{e}")),
         }
     }
 }
