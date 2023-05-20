@@ -21,3 +21,5 @@ pub static MESSAGES_GET: Lazy<Url> = Lazy::new(|| API_URL.join("/messages/get").
 pub static USERS_ADD_USER: Lazy<Url> = Lazy::new(|| API_URL.join("/users/add-user").unwrap());
 
 pub static REFRESH_TIME: u64 = 2;
+
+pub static DATE_COLOR: Lazy<iced::Color> = Lazy::new(|| iced::Color::from_rgb(0.6, 0.6, 0.6));

@@ -1,3 +1,4 @@
+#![allow(clippy::enum_variant_names)]
 use std::time::{Duration, Instant};
 
 use crate::{grimoire, window_structs::*};
@@ -172,9 +173,7 @@ impl Application for MainForm {
         {
             return Subscription::none();
         }
-
-        return iced::time::every(Duration::from_secs(grimoire::REFRESH_TIME))
-            .map(Message::RefreshMessages);
+        iced::time::every(Duration::from_secs(grimoire::REFRESH_TIME)).map(Message::RefreshMessages)
     }
 
     type Executor = executor::Default;

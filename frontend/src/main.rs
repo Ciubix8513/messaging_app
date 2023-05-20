@@ -12,6 +12,7 @@ mod login;
 mod main_window;
 mod messaging;
 mod regex;
+mod requests;
 mod signup;
 mod time_utils;
 mod window_structs;
