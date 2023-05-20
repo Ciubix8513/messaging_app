@@ -18,7 +18,7 @@ pub async fn get_user_with_id(pool: web::Data<DbPool>, path: web::Path<i32>) -> 
     match results {
         Ok(res) => HttpResponse::Ok().body(res),
         Err(diesel::result::Error::NotFound) => {
-            HttpResponse::BadRequest().body(format!("No user with id {}", id))
+            HttpResponse::BadRequest().body(format!("No user with id {id}"))
         }
         Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
@@ -50,7 +50,7 @@ pub async fn add_user(user: web::Json<AddUser>, pool: web::Data<DbPool>) -> impl
         .execute(connection);
     match result {
         Ok(_) => HttpResponse::Ok().body(""),
-        Err(error) => HttpResponse::BadRequest().body(format!("Failed to add user, {}", error)),
+        Err(error) => HttpResponse::BadRequest().body(format!("Failed to add user, {error}")),
     }
 }
 

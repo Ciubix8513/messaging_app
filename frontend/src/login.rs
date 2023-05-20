@@ -1,47 +1,11 @@
-use common_lib::{Login, UserData};
 use iced::{
     widget::{button, column, container, row, text, text_input},
     Alignment, Color, Length,
 };
-use reqwest::Method;
-use rsa::pkcs8::DecodePrivateKey;
 
-use crate::{
-    grimoire,
-    main_window::{MainForm, Message, WindowMode},
-    CLIENT,
-};
+use crate::main_window::{MainForm, Message};
 
 impl MainForm {
-    pub fn login(&mut self) {
-        let body = Login {
-            username: self.login_data.login_textbox.clone(),
-            password: self.login_data.password_textbox.clone(),
-        };
-        let response = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .request(Method::POST, grimoire::AUTH_LOGIN.clone())
-            .json(&body)
-            .send()
-            .unwrap();
-
-        if !response.status().is_success() {
-            self.login_data.error_message = String::from("Wrong username or password");
-            self.login_data.show_error_message = true;
-            self.login_data.password_textbox.clear();
-            return;
-        }
-        let response = response.json::<UserData>().unwrap();
-
-        self.messaging_data.key =
-            Some(rsa::RsaPrivateKey::from_pkcs8_pem(&response.private_key).unwrap());
-        //Login
-        self.winodow_mode = WindowMode::Messaging;
-        self.update_chat_list();
-    }
     pub fn login_view<'a>(&self) -> iced::Element<'a, Message> {
         let login_text = text("Login").size(40);
         let width = 200;

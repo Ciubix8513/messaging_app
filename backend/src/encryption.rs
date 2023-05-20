@@ -1,4 +1,3 @@
-#![allow(unused)]
 use std::collections::HashMap;
 
 use base64::Engine;
@@ -13,26 +12,20 @@ use crate::DbPool;
 //If the old key is not provided assumes that the messages were not encrypted previously and
 //generates chat keys and encrypts all the messages
 pub fn deploy(new_key: Key, old_key: Option<Key>, pool: &DbPool) {
-    match old_key {
-        Some(key) => {
-            println!("Re encrypting the keys in the database");
-            reencrypt_keys(pool, new_key, key)
-        }
-        //Assume the db wasn't previously encrypted and contains plain text messages
-        None => {
-            println!("No key found, assuming the databse wasn't encrypted previously");
-            let res = dialoguer::Confirm::new()
-                .with_prompt("Encrypt the database?\nWARNING if the database was encrypted previously, this will effectively DELETE ALL MESSAGES\nContinue?")
-                .show_default(false)
-                .interact()
-                .unwrap();
-            if !res {
-                panic!("No old key provided")
-            }
-            println!("Encrypting all existing messages in the database");
-            generate_keys(pool, new_key);
-            encrypt_existing_messages(pool, new_key);
-        }
+    if let Some(key) = old_key {
+        println!("Re encrypting the keys in the database");
+        reencrypt_keys(pool, new_key, key);
+    } else {
+        println!("No key found, assuming the databse wasn't encrypted previously");
+        let res = dialoguer::Confirm::new()
+                    .with_prompt("Encrypt the database?\nWARNING if the database was encrypted previously, this will effectively DELETE ALL MESSAGES\nContinue?")
+                    .show_default(false)
+                    .interact()
+                    .unwrap();
+        assert!(res, "No old key provided");
+        println!("Encrypting all existing messages in the database");
+        generate_keys(pool, new_key);
+        encrypt_existing_messages(pool, new_key);
     }
 }
 

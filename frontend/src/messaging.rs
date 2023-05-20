@@ -1,7 +1,3 @@
-use common_lib::{
-    encryption::{decrypt_base64_to_string, encrypt_string_to_base64, into_key},
-    GetChat, GetMessage, SendInvite, SendMessage,
-};
 use iced::{
     alignment::{self, Horizontal},
     theme::Container,
@@ -9,536 +5,171 @@ use iced::{
     Color, Length, Padding,
 };
 use iced_aw::{Card, Modal};
-use reqwest::{Method, StatusCode};
+use reqwest::StatusCode;
 
 use crate::{
     grimoire,
-    main_window::{MainForm, Message, WindowMode, SCROLLABLE_ID},
-    time_utils::naive_utc_to_naive_local,
-    window_structs::{Chat, LoginData},
-    CLIENT, COOKIE_STORE,
+    main_window::{MainForm, Message, SCROLLABLE_ID},
+    window_structs::MessageViewMode,
 };
 
 impl MainForm {
-    pub fn get_chat_key(&mut self) {
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .get(grimoire::CHATS_GET_KEY.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .query(&[("id", self.messaging_data.selected_chat)])
-            .send()
-            .unwrap();
-        if !result.status().is_success() {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-        let encrypted_key = result.json::<Vec<u8>>().unwrap();
-        let k = self
-            .messaging_data
-            .key
-            .clone()
-            .unwrap()
-            .decrypt(rsa::Pkcs1v15Encrypt, &encrypted_key)
-            .unwrap();
-
-        self.messaging_data.chat_key = into_key(&k);
-    }
-
-    pub fn send_message(&mut self) {
-        let body = SendMessage {
-            chat_id: self.messaging_data.selected_chat.unwrap(),
-            text: encrypt_string_to_base64(
-                &self.messaging_data.current_message.clone(),
-                &self.messaging_data.chat_key,
-            ),
-        };
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .post(grimoire::MESSAGES_SEND.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .json(&body)
-            .send()
-            .unwrap();
-        if !result.status().is_success() {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-        self.messaging_data.current_message.clear();
-        self.load_messages(false);
-    }
-
-    pub fn accept_invite(&mut self, id: i32) {
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .post(grimoire::INVITES_ACCEPT.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .json(&id)
-            .send()
-            .unwrap();
-        if !result.status().is_success() {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-        self.messaging_data.invites.retain(|i| i.invite_id != id);
-    }
-
-    pub fn decline_invite(&mut self, id: i32) {
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .post(grimoire::INVITES_REJECT.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .json(&id)
-            .send()
-            .unwrap();
-        if !result.status().is_success() {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-        self.messaging_data.invites.retain(|i| i.invite_id != id);
-    }
-
-    pub fn send_invite(&mut self) {
-        let body = SendInvite {
-            chat_id: self.messaging_data.selected_chat.unwrap(),
-            recipient_name: self.messaging_data.textinput_modal_data.modal_text.clone(),
-        };
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .post(grimoire::INVITES_SEND.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .json(&body)
-            .send()
-            .unwrap();
-        if !result.status().is_success() {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-    }
-
-    pub fn update_invites_list(&mut self) {
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .get(grimoire::INVITES_GET.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .send()
-            .unwrap();
-
-        if !result.status().is_success() && result.status() != reqwest::StatusCode::NOT_FOUND {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-        self.messaging_data.invites = result.json().unwrap_or(Vec::default());
-        self.messaging_data.invites.iter_mut().for_each(|i| {
-            i.created_at = naive_utc_to_naive_local(&i.created_at);
-        });
-    }
-
-    pub fn update_chat_list(&mut self) {
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .request(Method::GET, grimoire::CHATS_GET.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .send()
-            .unwrap();
-        if !result.status().is_success() && result.status() != reqwest::StatusCode::NOT_FOUND {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-        let data: Vec<GetChat> = result.json().unwrap_or(Vec::default());
-        self.messaging_data.chats = data
-            .iter()
-            .map(|i| Chat {
-                chat_id: i.chat_id,
-                chat_name: i.chat_name.clone(),
-            })
-            .collect();
-    }
-
     pub fn error_message(&mut self, message: String, code: StatusCode) {
-        println!("ERROR {:#?} / {}", code, message);
+        println!("ERROR {code:#?} / {message}");
         self.messaging_data.show_error_modal = true;
         self.messaging_data.error_message = message;
     }
 
-    pub fn logout(&mut self) {
-        let c = COOKIE_STORE
-            .lock()
-            .unwrap()
-            .iter_any()
-            .collect::<Vec<_>>()
-            .first()
-            .unwrap()
-            .value()
-            .to_string();
-        println!("SENDING COOKE, {}", c);
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .request(Method::DELETE, grimoire::AUTH_LOGOUT.clone())
-            //This is so sketch lol
-            .header("cookie", format!("id={}", c))
-            .send();
-        let result = result.unwrap();
-        if !result.status().is_success() {
-            println!("Logout error {}", result.text().unwrap());
-        }
-
-        self.winodow_mode = WindowMode::Login;
-        self.login_data = LoginData::default();
-    }
-
-    pub fn create_chat(&mut self) {
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .request(Method::POST, grimoire::CHATS_CREATE.clone())
-            .json(&self.messaging_data.textinput_modal_data.modal_text)
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .send()
-            .unwrap();
-        if !result.status().is_success() {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return;
-        }
-        self.update_chat_list();
-    }
-
-    pub fn load_messages(&mut self, force: bool) -> bool {
-        if self.messaging_data.selected_chat.is_none() {
-            return false;
-        }
-        let result = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .get(grimoire::MESSAGES_GET.clone())
-            .header(
-                "cookie",
-                format!(
-                    "id={}",
-                    COOKIE_STORE
-                        .lock()
-                        .unwrap()
-                        .iter_unexpired()
-                        .collect::<Vec<_>>()
-                        .first()
-                        .unwrap()
-                        .value()
-                ),
-            )
-            .query(&[("id", self.messaging_data.selected_chat)])
-            .send()
-            .unwrap();
-        if !result.status().is_success() {
-            let status = result.status();
-            self.error_message(result.text().unwrap(), status);
-            return false;
-        }
-        let new = result.json::<Vec<GetMessage>>().unwrap();
-        if new.len() == self.messaging_data.messages.len() && !force {
-            return false;
-        }
-
-        let new = new[self.messaging_data.messages.len()..]
+    fn side_bar(&self) -> iced::Element<'_, Message> {
+        // let contents = text("").height(Length::Fill);
+        let contents = self
+            .messaging_data
+            .chats
             .iter()
-            .map(|i| GetMessage {
-                message_id: i.message_id,
-                user_id: i.user_id,
-                username: i.username.clone(),
-                message_text: decrypt_base64_to_string(
-                    &i.message_text,
-                    &self.messaging_data.chat_key,
-                ),
-                sent_at: naive_utc_to_naive_local(&i.sent_at),
-            });
-        self.messaging_data.messages.append(&mut new.collect());
+            .map(|t| button(text(&t.chat_name)).on_press(Message::SelectChat(t.chat_id)))
+            .fold(Column::new(), Column::push)
+            .spacing(5);
+        //fold(column,|t| text(format!("{}",t.name)))
+        let bottom_things = {
+            let new_chat = button(
+                text("New chat")
+                    .horizontal_alignment(alignment::Horizontal::Center)
+                    .width(Length::Fill),
+            )
+            .on_press(Message::CreateChatButtonPressed)
+            .width(Length::Fill);
+            let mut invite = button(
+                text("Invite")
+                    .horizontal_alignment(alignment::Horizontal::Center)
+                    .width(Length::Fill),
+            )
+            .width(Length::Fill);
 
-        true
+            if self.messaging_data.selected_chat.is_some() {
+                invite = invite.on_press(Message::InviteButtonPressed);
+            }
+
+            container(column![new_chat, invite].spacing(5))
+                .align_y(alignment::Vertical::Bottom)
+                .height(100)
+        };
+
+        container(column![
+            text("Chats:"),
+            scrollable(contents).height(Length::Fill),
+            bottom_things
+        ])
+        .align_x(alignment::Horizontal::Left)
+        .height(Length::Fill)
+        .width(200)
+        .padding(2)
+        .style(Container::Box)
+        .into()
+    }
+
+    fn top_bar() -> iced::Element<'static, Message> {
+        let logout = button("Logout").on_press(Message::LogoutButtonPressed);
+        let invites = button("Invites").on_press(Message::InvitesButtonPressed);
+
+        container(row![invites, logout].spacing(2))
+            .align_x(alignment::Horizontal::Right)
+            .height(35)
+            .padding(2)
+            .width(Length::Fill)
+            .style(Container::Box)
+            .into()
+    }
+
+    fn messaging_view_mode(&self) -> iced::widget::Container<'_, Message> {
+        if self.messaging_data.selected_chat.is_some() {
+            container(
+                column![
+                    scrollable(
+                        self.messaging_data
+                            .messages
+                            .iter()
+                            .map(|i| {
+                                let uname = text(&i.username);
+                                let date = text(i.sent_at).style(*grimoire::DATE_COLOR);
+                                let body = text(&i.message_text);
+                                container(column![row![uname, date].spacing(5), body])
+                            })
+                            .fold(Column::new(), Column::push)
+                            .spacing(10)
+                            .padding(Padding {
+                                right: 20.0,
+                                bottom: 10.0,
+                                left: 0.0,
+                                top: 0.0
+                            }),
+                    )
+                    .height(Length::Fill)
+                    .width(Length::Fill)
+                    .id(SCROLLABLE_ID.clone()),
+                    {
+                        let mut input = text_input("...", &self.messaging_data.current_message)
+                            .on_input(Message::MessageEdited);
+                        if !self.messaging_data.current_message.is_empty() {
+                            input = input.on_submit(Message::SendMessage);
+                        }
+                        let mut send_button = button("Send");
+                        if !self.messaging_data.current_message.is_empty() {
+                            send_button = send_button.on_press(Message::SendMessage);
+                        }
+                        row![input, send_button].spacing(5)
+                    }
+                ]
+                .spacing(2),
+            )
+        } else {
+            //Kinda hacky but it's fine
+            container(text(""))
+        }
+    }
+
+    fn invites_view_mode(&self) -> iced::widget::Container<'_, Message> {
+        container(
+            column![
+                text("Invites:"),
+                if self.messaging_data.invites.is_empty() {
+                    scrollable(text("None"))
+                } else {
+                    scrollable(
+                        self.messaging_data
+                            .invites
+                            .iter()
+                            .map(|i| {
+                                container({
+                                    let c_name = text(i.chat_name.clone());
+                                    let s_name = text(format!("from: {}", i.sender_name.clone()));
+                                    let date = text(i.created_at).style(*grimoire::DATE_COLOR);
+                                    let accept_btn = button("Accpet")
+                                        .on_press(Message::AcceptInvite(i.invite_id));
+                                    let decline_btn = button("Decline")
+                                        .on_press(Message::DeclineInvite(i.invite_id));
+                                    column![
+                                        row![c_name, date].spacing(5),
+                                        s_name,
+                                        row![accept_btn, decline_btn].spacing(3)
+                                    ]
+                                    .spacing(5)
+                                })
+                                .padding(5)
+                            })
+                            .fold(Column::new(), Column::push),
+                    )
+                }
+            ]
+            .spacing(10),
+        )
     }
 
     pub fn messaging_view(&self) -> iced::Element<'_, Message> {
-        let top_bar = {
-            //Start with the top bar
-            let logout = button("Logout").on_press(Message::LogoutButtonPressed);
-            let invites = button("Invites").on_press(Message::InvitesButtonPressed);
-
-            container(row![invites, logout].spacing(2))
-                .align_x(alignment::Horizontal::Right)
-                .height(35)
-                .padding(2)
-                .width(Length::Fill)
-                .style(Container::Box)
-        };
-        let side_bar = {
-            // let contents = text("").height(Length::Fill);
-            let contents = self
-                .messaging_data
-                .chats
-                .iter()
-                .map(|t| {
-                    button(text(format!("{}", t.chat_name)))
-                        .on_press(Message::SelectChat(t.chat_id))
-                })
-                .fold(Column::new(), |acc, x| acc.push(x))
-                .spacing(5);
-            //fold(column,|t| text(format!("{}",t.name)))
-            let bottom_things = {
-                let new_chat = button(
-                    text("New chat")
-                        .horizontal_alignment(alignment::Horizontal::Center)
-                        .width(Length::Fill),
-                )
-                .on_press(Message::CreateChatButtonPressed)
-                .width(Length::Fill);
-                let mut invite = button(
-                    text("Invite")
-                        .horizontal_alignment(alignment::Horizontal::Center)
-                        .width(Length::Fill),
-                )
-                .width(Length::Fill);
-
-                if self.messaging_data.selected_chat.is_some() {
-                    invite = invite.on_press(Message::InviteButtonPressed);
-                }
-
-                container(column![new_chat, invite].spacing(5))
-                    .align_y(alignment::Vertical::Bottom)
-                    .height(100)
-            };
-
-            container(column![
-                text("Chats:"),
-                scrollable(contents).height(Length::Fill),
-                bottom_things
-            ])
-            .align_x(alignment::Horizontal::Left)
-            .height(Length::Fill)
-            .width(200)
-            .padding(2)
-            .style(Container::Box)
-        };
-        let date_color = Color::from_rgb(0.6, 0.6, 0.6);
+        let top_bar = Self::top_bar();
+        let side_bar = self.side_bar();
         let main_view = match self.messaging_data.mode {
-            crate::window_structs::MessageViewMode::Messages => {
-                if self.messaging_data.selected_chat.is_some() {
-                    container(
-                        column![
-                            scrollable(
-                                self.messaging_data
-                                    .messages
-                                    .iter()
-                                    .map(|i| {
-                                        let uname = text(&i.username);
-                                        let date = text(i.sent_at).style(date_color.clone());
-                                        let body = text(&i.message_text);
-                                        container(column![row![uname, date].spacing(5), body])
-                                    })
-                                    .fold(Column::new(), |c, i| c.push(i))
-                                    .spacing(10)
-                                    .padding(Padding {
-                                        right: 20.0,
-                                        bottom: 10.0,
-                                        left: 0.0,
-                                        top: 0.0
-                                    }),
-                            )
-                            .height(Length::Fill)
-                            .width(Length::Fill)
-                            .id(SCROLLABLE_ID.clone()),
-                            {
-                                let mut input =
-                                    text_input("...", &self.messaging_data.current_message)
-                                        .on_input(Message::MessageEdited);
-                                if !self.messaging_data.current_message.is_empty() {
-                                    input = input.on_submit(Message::SendMessage);
-                                }
-                                let mut send_button = button("Send");
-                                if !self.messaging_data.current_message.is_empty() {
-                                    send_button = send_button.on_press(Message::SendMessage);
-                                }
-                                row![input, send_button].spacing(5)
-                            }
-                        ]
-                        .spacing(2),
-                    )
-                } else {
-                    //Kinda hacky but it's fine
-                    container(text(""))
-                }
-            }
-            crate::window_structs::MessageViewMode::Invites => container(
-                column![
-                    text("Invites:"),
-                    if !self.messaging_data.invites.is_empty() {
-                        scrollable(
-                            self.messaging_data
-                                .invites
-                                .iter()
-                                .map(|i| {
-                                    container({
-                                        let c_name = text(i.chat_name.clone());
-                                        let s_name =
-                                            text(format!("from: {}", i.sender_name.clone()));
-                                        let date = text(i.created_at).style(date_color.clone());
-                                        let accept_btn = button("Accpet")
-                                            .on_press(Message::AcceptInvite(i.invite_id));
-                                        let decline_btn = button("Decline")
-                                            .on_press(Message::DeclineInvite(i.invite_id));
-                                        column![
-                                            row![c_name, date].spacing(5),
-                                            s_name,
-                                            row![accept_btn, decline_btn].spacing(3)
-                                        ]
-                                        .spacing(5)
-                                    })
-                                    .padding(5)
-                                })
-                                .fold(Column::new(), |c, i| c.push(i)),
-                        )
-                    } else {
-                        scrollable(text("None"))
-                    }
-                ]
-                .spacing(10),
-            ),
+            MessageViewMode::Messages => self.messaging_view_mode(),
+            MessageViewMode::Invites => self.invites_view_mode(),
         }
         .padding(10);
 
@@ -571,7 +202,7 @@ impl MainForm {
                             {
                                 b = b.on_press(
                                     self.messaging_data.textinput_modal_data.message.clone(),
-                                )
+                                );
                             }
                             b
                         },

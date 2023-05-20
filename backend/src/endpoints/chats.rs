@@ -8,7 +8,7 @@ use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
 use rsa::pkcs8::DecodePublicKey;
 
 use crate::{
-    endpoints::messages_endpoints::Param,
+    endpoints::messages::Param,
     grimoire,
     models::{CreateChat, GroupChatMember},
     utils::is_logged_in,
@@ -42,9 +42,8 @@ async fn create_chat(
             .values(values.clone())
             .execute(connection)
     };
-    match result {
-        Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
-        Ok(_) => (),
+    if let Err(e) = result {
+        return HttpResponse::InternalServerError().body(e.to_string());
     }
     let result = {
         use crate::schema::group_chat_members::dsl as gcm;
@@ -94,7 +93,7 @@ async fn exit_chat(
         let result: Result<usize, _> = group_chat_members.find((id, sender_id)).execute(connection);
         match result {
             Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
-            Ok(0) => return HttpResponse::BadRequest().body(format!("No chat with id {}", id)),
+            Ok(0) => return HttpResponse::BadRequest().body(format!("No chat with id {id}")),
             _ => (),
         }
     }
@@ -145,7 +144,7 @@ async fn get_chats(pool: web::Data<DbPool>, session: actix_session::Session) -> 
                     })
                     .collect::<Vec<_>>(),
             ),
-            Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
+            Err(e) => HttpResponse::InternalServerError().body(format!("{e}")),
         }
     }
 }

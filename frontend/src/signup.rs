@@ -1,88 +1,11 @@
-use common_lib::{AddUser, Login, UserData};
 use iced::{
     widget::{button, column, container, text, text_input},
     Alignment, Color, Length,
 };
-use reqwest::Method;
-use rsa::pkcs8::DecodePrivateKey;
 
-use crate::{
-    grimoire,
-    main_window::{MainForm, Message, WindowMode},
-    CLIENT,
-};
+use crate::main_window::{MainForm, Message};
 
 impl MainForm {
-    pub fn signup(&mut self) {
-        if self.signup_data.email_textbox.is_empty()
-            || self.signup_data.username_textbox.is_empty()
-            || self.signup_data.password_textbox[0].is_empty()
-        {
-            self.signup_data.show_error_message = true;
-            self.signup_data.error_message = "All fields must be filled in".to_string();
-            return;
-        }
-        if self.signup_data.password_textbox[0] != self.signup_data.password_textbox[1] {
-            self.signup_data.show_error_message = true;
-            self.signup_data.error_message = "Passwords don't match".to_string();
-            return;
-        }
-        if self.signup_data.password_textbox[0].len() < 8 {
-            self.signup_data.show_error_message = true;
-            self.signup_data.error_message =
-                "Password must be at least 8 characters long".to_string();
-            return;
-        }
-        //Validate email
-        let re = crate::regex::email_regex();
-        if !re.is_match(&self.signup_data.email_textbox) {
-            self.signup_data.show_error_message = true;
-            self.signup_data.error_message = "Invalid email adress".to_string();
-            return;
-        }
-        //Passed all the checks, do the request
-        let body = AddUser {
-            username: self.signup_data.username_textbox.clone(),
-            password: self.signup_data.password_textbox[0].clone(),
-            email: self.signup_data.email_textbox.clone(),
-        };
-        let response = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .request(Method::POST, grimoire::USERS_ADD_USER.clone())
-            .json(&body)
-            .send()
-            .unwrap();
-        if !response.status().is_success() {
-            self.signup_data.show_error_message = true;
-            self.signup_data.error_message = response.text().unwrap();
-            return;
-        }
-        let body = Login {
-            username: self.signup_data.username_textbox.clone(),
-            password: self.signup_data.password_textbox[0].clone(),
-        };
-        let response = CLIENT
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .request(Method::POST, grimoire::AUTH_LOGIN.clone())
-            .json(&body)
-            .send()
-            .unwrap()
-            .json::<UserData>()
-            .unwrap();
-        self.messaging_data.key =
-            Some(rsa::RsaPrivateKey::from_pkcs8_pem(&response.private_key).unwrap());
-
-        //Log in
-        self.winodow_mode = WindowMode::Messaging;
-        self.update_chat_list();
-    }
-
     pub fn signup_view<'a>(&self) -> iced::Element<'a, Message> {
         let signup_text = text("Signup  ").size(40);
         let width = 200;
