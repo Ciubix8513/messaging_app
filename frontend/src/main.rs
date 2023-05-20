@@ -1,3 +1,4 @@
+#![allow(clippy::significant_drop_tightening)]
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -25,14 +26,14 @@ fn cookie_path() -> PathBuf {
 }
 
 fn get_cookie_store_mutex() -> reqwest_cookie_store::CookieStoreMutex {
+    #![allow(clippy::option_if_let_else)]
     let cookie_store = {
-        match std::fs::File::open(cookie_path()) {
-            Ok(file) => {
-                let file = std::io::BufReader::new(file);
-                reqwest_cookie_store::CookieStore::load_json(file)
-                    .unwrap_or_else(|_| reqwest_cookie_store::CookieStore::default())
-            }
-            Err(_) => reqwest_cookie_store::CookieStore::default(),
+        if let Ok(file) = std::fs::File::open(cookie_path()) {
+            let file = std::io::BufReader::new(file);
+            reqwest_cookie_store::CookieStore::load_json(file)
+                .unwrap_or_else(|_| reqwest_cookie_store::CookieStore::default())
+        } else {
+            reqwest_cookie_store::CookieStore::default()
         }
     };
     reqwest_cookie_store::CookieStoreMutex::new(cookie_store)
@@ -78,6 +79,5 @@ fn main() -> Result<(), iced::Error> {
         .unwrap();
     let store = COOKIE_STORE.lock().unwrap();
     store.save_json(&mut writer).unwrap();
-    println!("{}", cookie_path().display());
     Ok(())
 }

@@ -126,7 +126,7 @@ impl MainForm {
             .unwrap()
             .delete(grimoire::AUTH_LOGOUT.clone())
             //This is so sketch lol
-            .header("cookie", format!("id={}", c))
+            .header("cookie", format!("id={c}"))
             .send();
         let result = result.unwrap();
         if !result.status().is_success() {

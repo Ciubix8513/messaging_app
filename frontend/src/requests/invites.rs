@@ -132,7 +132,7 @@ impl MainForm {
             self.error_message(result.text().unwrap(), status);
             return;
         }
-        self.messaging_data.invites = result.json().unwrap_or(Vec::default());
+        self.messaging_data.invites = result.json().unwrap_or_default();
         self.messaging_data.invites.iter_mut().for_each(|i| {
             i.created_at = naive_utc_to_naive_local(&i.created_at);
         });

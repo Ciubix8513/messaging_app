@@ -105,7 +105,7 @@ impl MainForm {
             self.error_message(result.text().unwrap(), status);
             return;
         }
-        let data: Vec<GetChat> = result.json().unwrap_or(Vec::default());
+        let data: Vec<GetChat> = result.json().unwrap_or_default();
         self.messaging_data.chats = data
             .iter()
             .map(|i| Chat {

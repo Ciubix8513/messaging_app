@@ -1,11 +1,14 @@
 #![allow(clippy::enum_variant_names)]
 use std::time::{Duration, Instant};
 
-use crate::{grimoire, window_structs::*};
+use crate::{
+    grimoire,
+    window_structs::{LoginData, MessageViewMode, MessagingData, SignupData},
+};
 use iced::{executor, widget::scrollable, Application, Command, Subscription};
 use once_cell::sync::Lazy;
 
-#[derive(Default, PartialEq)]
+#[derive(Default, PartialEq, Eq)]
 pub enum WindowMode {
     #[default]
     Login,
@@ -70,7 +73,7 @@ impl Application for MainForm {
             Message::LoginViewSignupButtonPressed => {
                 //Clear signup data
                 self.signup_data = SignupData::default();
-                self.winodow_mode = WindowMode::SignUp
+                self.winodow_mode = WindowMode::SignUp;
             }
             Message::BackButtonPressed => self.winodow_mode = WindowMode::Login,
             //Signup stuff
@@ -91,14 +94,14 @@ impl Application for MainForm {
                 self.messaging_data.textinput_modal_data.message = Message::ConfirmCreateChat;
             }
             Message::CloseCreateChatModal => {
-                self.messaging_data.textinput_modal_data.show_modal = false
+                self.messaging_data.textinput_modal_data.show_modal = false;
             }
             Message::ConfirmCreateChat => {
                 self.create_chat();
-                self.messaging_data.textinput_modal_data.show_modal = false
+                self.messaging_data.textinput_modal_data.show_modal = false;
             }
             Message::CreateChatModalTextChange(v) => {
-                self.messaging_data.textinput_modal_data.modal_text = v
+                self.messaging_data.textinput_modal_data.modal_text = v;
             }
             Message::ErrorModalClose => self.messaging_data.show_error_modal = false,
             Message::SelectChat(val) => {
@@ -118,7 +121,7 @@ impl Application for MainForm {
             }
             Message::ConfirmInvite => {
                 self.send_invite();
-                self.messaging_data.textinput_modal_data.show_modal = false
+                self.messaging_data.textinput_modal_data.show_modal = false;
             }
             Message::InvitesButtonPressed => {
                 self.messaging_data.selected_chat = None;
@@ -161,7 +164,7 @@ impl Application for MainForm {
     }
 
     fn new(_flags: Self::Flags) -> (Self, Command<Message>) {
-        (MainForm::default(), Command::none())
+        (Self::default(), Command::none())
     }
 
     fn theme(&self) -> iced::Theme {

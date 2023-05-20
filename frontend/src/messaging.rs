@@ -15,7 +15,7 @@ use crate::{
 
 impl MainForm {
     pub fn error_message(&mut self, message: String, code: StatusCode) {
-        println!("ERROR {:#?} / {}", code, message);
+        println!("ERROR {code:#?} / {message}");
         self.messaging_data.show_error_modal = true;
         self.messaging_data.error_message = message;
     }
@@ -67,8 +67,7 @@ impl MainForm {
         .into()
     }
 
-    fn top_bar(&self) -> iced::Element<'_, Message> {
-        //Start with the top bar
+    fn top_bar() -> iced::Element<'static, Message> {
         let logout = button("Logout").on_press(Message::LogoutButtonPressed);
         let invites = button("Invites").on_press(Message::InvitesButtonPressed);
 
@@ -91,7 +90,7 @@ impl MainForm {
                             .iter()
                             .map(|i| {
                                 let uname = text(&i.username);
-                                let date = text(i.sent_at).style(grimoire::DATE_COLOR.clone());
+                                let date = text(i.sent_at).style(*grimoire::DATE_COLOR);
                                 let body = text(&i.message_text);
                                 container(column![row![uname, date].spacing(5), body])
                             })
@@ -143,8 +142,7 @@ impl MainForm {
                                 container({
                                     let c_name = text(i.chat_name.clone());
                                     let s_name = text(format!("from: {}", i.sender_name.clone()));
-                                    let date =
-                                        text(i.created_at).style(grimoire::DATE_COLOR.clone());
+                                    let date = text(i.created_at).style(*grimoire::DATE_COLOR);
                                     let accept_btn = button("Accpet")
                                         .on_press(Message::AcceptInvite(i.invite_id));
                                     let decline_btn = button("Decline")
@@ -167,7 +165,7 @@ impl MainForm {
     }
 
     pub fn messaging_view(&self) -> iced::Element<'_, Message> {
-        let top_bar = self.top_bar();
+        let top_bar = Self::top_bar();
         let side_bar = self.side_bar();
         let main_view = match self.messaging_data.mode {
             MessageViewMode::Messages => self.messaging_view_mode(),
