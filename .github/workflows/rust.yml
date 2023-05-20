@@ -19,6 +19,6 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Linting
-      run: cargo clippy --verbose
+      run: cargo clippy -D clippy::pedantic -D clippy::nursery
     - name: Run tests
       run: cargo test --verbose
