@@ -12,22 +12,28 @@ pub async fn upload_file(
     // pool: web::Data<DbPool>,
     mut payload: Multipart,
 ) -> impl Responder {
-    //First item has to be the metadata
-    let mut field = payload.next().await.unwrap().unwrap();
-    if field.name() != UPLOAD_METADATA_NAME {
-        return HttpResponse::BadRequest().body("No metadata provided");
-    }
-    let json = String::from_utf8(field.next().await.unwrap().unwrap().into()).unwrap();
-    let metadata = serde_json::from_str::<UploadFile>(&json);
-    if metadata.is_err() {
-        return HttpResponse::BadRequest().body("Wrong metadata structure");
-    }
-    let metadata = metadata.unwrap();
-
-    //Perform auth checks here
-
+    let mut metadata = None;
     while let Some(item) = payload.next().await {
+        println!("Got an item");
         let mut field = item.unwrap();
+        //First item has to be the metadata
+        //This metadata receiving should be fine
+        if metadata.is_none(){
+            if field.name() != UPLOAD_METADATA_NAME {
+                return HttpResponse::BadRequest().body("No metadata provided");
+            }
+            let json = String::from_utf8(field.next().await.unwrap().unwrap().into());
+            if json.is_err(){
+                return HttpResponse::BadRequest().body("Wrong metadata structure");
+            }
+            metadata= serde_json::from_str::<UploadFile>(&json.unwrap()).ok();
+            if metadata.is_none(){
+                return HttpResponse::BadRequest().body("Wrong metadata structure");
+            }
+            println!("Got metadata");
+            //Perform auth checks here
+            continue;
+        }
         let path = std::env::current_dir().unwrap().join("./test");
         let mut file = fs::File::create(path).unwrap();
         let mut i = 0;
