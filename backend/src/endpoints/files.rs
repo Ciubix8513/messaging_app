@@ -1,4 +1,4 @@
-use std::{fs, io::Write};
+use std::{fs, io::Write, print, println};
 
 use actix_multipart::Multipart;
 use actix_web::{post, HttpResponse, Responder};
@@ -16,13 +16,23 @@ pub async fn upload_file(
     while let Some(item) = payload.next().await {
         let mut field = item.unwrap();
         let name = field.name();
+        let content_type = field.content_type();
         println!("Name = {name}");
+        if let Some(content_type) = content_type {
+            for i in content_type.params() {
+                println!("Param  {}/{}", i.0, i.1);
+            }
+        }
 
         let path = grimoire::FILE_LOCATION;
         let mut file = fs::File::create(format!("{path}/test")).unwrap();
+        let mut i = 0;
         while let Some(chunk) = field.try_next().await.unwrap() {
+            println!("Got a chunk");
             file.write_all(&chunk).unwrap();
+            i += 1;
         }
+        println!("Total of {i} chunks");
     }
 
     // let sender_id = is_logged_in(&session);
