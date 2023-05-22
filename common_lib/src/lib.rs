@@ -1,6 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 
 pub mod encryption;
+pub mod grimoire;
 
 #[derive(Serialize, Deserialize)]
 pub struct AddUser {
@@ -64,4 +65,10 @@ pub struct GetChat {
     pub chat_name: String,
     pub creator_id: i32,
     pub creator_name: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UploadFile {
+    pub chat_id: i32,
+    pub message_text: String,
 }

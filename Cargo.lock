@@ -451,6 +451,8 @@ dependencies = [
  "rsa",
  "serde",
  "serde_derive",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]
