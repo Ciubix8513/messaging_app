@@ -6,7 +6,7 @@ use chrono::Local;
 use common_lib::{grimoire::UPLOAD_METADATA_NAME, UploadFile};
 
 use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures::{StreamExt, TryStreamExt};
 
 use tokio::io::AsyncReadExt;
 
@@ -169,9 +169,10 @@ async fn download_file(
     let file = tokio::fs::File::open(path).await.unwrap();
 
     // Create a buffer to read the file contents into
-    let mut buffer = vec![0; 1024]; // Adjust the buffer size as needed
+    let mut buffer = [0; 1024]; // Adjust the buffer size as needed
 
     // Read the file in chunks and convert it into a stream
+    //Thank you ChatGPT for this
     let stream = async_stream::stream! {
         let mut reader = file;
         loop {
@@ -185,7 +186,8 @@ async fn download_file(
 
             // Emit the chunk of data as a stream item
             let chunk : web::Bytes = web::Bytes::from(buffer[..bytes_read].to_vec());
-            yield Ok(chunk);
+            let result : Result<web::Bytes,std::io::Error> = Ok(chunk);
+            yield result;
         }
 
     };
