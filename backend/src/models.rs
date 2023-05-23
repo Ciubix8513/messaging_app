@@ -66,6 +66,7 @@ pub struct CreateChat {
     pub chat_name: String,
     pub created_at: chrono::NaiveDateTime,
     pub created_by: i32,
+    pub key: String,
 }
 
 #[derive(Insertable)]

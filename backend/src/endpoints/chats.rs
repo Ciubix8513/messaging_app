@@ -1,7 +1,7 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use base64::Engine;
 use common_lib::{
-    encryption::{decrypt_key, into_key, Key, ENCODING_ENGINE},
+    encryption::{decrypt_key, encrypt_key, generate_aes_key, into_key, Key, ENCODING_ENGINE},
     GetChat,
 };
 use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
@@ -20,6 +20,7 @@ async fn create_chat(
     name: web::Json<String>,
     pool: web::Data<DbPool>,
     session: actix_session::Session,
+    deploy_key: web::Data<Key>,
 ) -> impl Responder {
     let sender_id = is_logged_in(&session);
     if sender_id.is_err() {
@@ -28,11 +29,14 @@ async fn create_chat(
     let sender_id: i32 = sender_id.unwrap();
 
     let connection = &mut pool.get().unwrap();
+    let key = generate_aes_key();
+    let key = encrypt_key(&key, &deploy_key);
 
     let values = CreateChat {
         chat_name: name.into_inner(),
         created_at: chrono::Local::now().naive_utc(),
         created_by: sender_id,
+        key: ENCODING_ENGINE.encode(key),
     };
 
     let result = {
