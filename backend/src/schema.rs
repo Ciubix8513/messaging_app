@@ -13,9 +13,9 @@ diesel::table! {
 diesel::table! {
     files (id) {
         id -> Integer,
-        filename -> Nullable<Varchar>,
-        path -> Nullable<Varchar>,
-        message_id -> Nullable<Integer>,
+        filename -> Varchar,
+        path -> Varchar,
+        message_id -> Integer,
     }
 }
 

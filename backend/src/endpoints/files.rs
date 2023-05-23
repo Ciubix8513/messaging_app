@@ -1,12 +1,14 @@
-use std::{io::Write, println};
+use std::{io::Write, path::PathBuf, println};
 
 use actix_multipart::Multipart;
-use actix_web::{post, web, HttpResponse, Responder};
+use actix_web::{get, http::header::ContentDisposition, post, web, HttpResponse, Responder};
 use chrono::Local;
 use common_lib::{grimoire::UPLOAD_METADATA_NAME, UploadFile};
 
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
-use futures::{StreamExt, TryStreamExt};
+use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
+use futures::{Stream, StreamExt, TryStreamExt};
+
+use tokio::io::AsyncReadExt;
 
 use crate::{
     grimoire,
@@ -14,6 +16,8 @@ use crate::{
     utils::{generate_uuid, is_logged_in},
     DbPool,
 };
+
+use super::Param;
 
 #[post("/files/upload")]
 pub async fn upload_file(
@@ -119,4 +123,73 @@ pub async fn upload_file(
     }
 
     HttpResponse::Ok().body("")
+}
+
+#[get("/files/download")]
+async fn download_file(
+    session: actix_session::Session,
+    pool: web::Data<DbPool>,
+    web::Query(param): web::Query<Param>,
+) -> impl Responder {
+    //First check if the user is logged in
+    let sender_id = is_logged_in(&session);
+    if sender_id.is_err() {
+        return HttpResponse::Unauthorized().body("");
+    }
+    let u_id: i32 = sender_id.unwrap();
+
+    let connection = &mut pool.get().unwrap();
+    //Now check if the user is in the same chat as the file
+    let filename;
+    let path;
+    {
+        use crate::schema::files::dsl as f;
+        use crate::schema::group_chat_members::dsl as gcm;
+        use crate::schema::messages::dsl as msg;
+
+        let result = f::files
+            .inner_join(msg::messages)
+            .inner_join(gcm::group_chat_members.on(gcm::chat_id.eq(msg::chat_id)))
+            .filter(gcm::user_id.eq(u_id))
+            .filter(f::id.eq(param.id))
+            .select((f::filename, f::path))
+            .first::<(String, String)>(connection);
+        match result {
+            Err(diesel::result::Error::NotFound) => return HttpResponse::Unauthorized().body(""),
+            Err(e) => return HttpResponse::InternalServerError().body(format!("{e}")),
+            Ok(values) => {
+                filename = values.0;
+                path = values.1;
+            }
+        }
+    }
+    //The user should have access to the file, now we need to get the file
+
+    let path = PathBuf::from(path);
+    let file = tokio::fs::File::open(path).await.unwrap();
+
+    // Create a buffer to read the file contents into
+    let mut buffer = vec![0; 1024]; // Adjust the buffer size as needed
+
+    // Read the file in chunks and convert it into a stream
+    let stream = async_stream::stream! {
+        let mut reader = file;
+        loop {
+            // Read a chunk of data from the file
+            let bytes_read = reader.read(&mut buffer).await?;
+
+            // Check if we've reached the end of the file
+            if bytes_read == 0 {
+                break;
+            }
+
+            // Emit the chunk of data as a stream item
+            let chunk : web::Bytes = web::Bytes::from(buffer[..bytes_read].to_vec());
+            yield Ok(chunk);
+        }
+
+    };
+    HttpResponse::Ok()
+        .insert_header(ContentDisposition::attachment(filename))
+        .streaming(stream)
 }
