@@ -446,6 +446,7 @@ dependencies = [
  "dotenvy",
  "env_logger",
  "futures",
+ "once_cell",
  "password-hash",
  "rand",
  "rsa",

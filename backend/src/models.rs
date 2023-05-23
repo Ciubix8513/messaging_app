@@ -76,3 +76,11 @@ pub struct CreateMessage {
     pub message_text: String,
     pub sent_at: chrono::NaiveDateTime,
 }
+
+#[derive(Insertable)]
+#[diesel(table_name=files)]
+pub struct CreateFile {
+    pub message_id: i32,
+    pub filename: String,
+    pub path: String,
+}

@@ -67,7 +67,7 @@ pub struct GetChat {
     pub creator_name: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct UploadFile {
     pub chat_id: i32,
     pub message_text: String,
