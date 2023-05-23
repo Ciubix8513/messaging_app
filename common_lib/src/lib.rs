@@ -57,6 +57,13 @@ pub struct GetMessage {
     pub username: String,
     pub message_text: String,
     pub sent_at: chrono::NaiveDateTime,
+    pub files: Vec<GetFile>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct GetFile {
+    pub file_id: i32,
+    pub filename: String,
 }
 
 #[derive(Serialize, Deserialize)]
