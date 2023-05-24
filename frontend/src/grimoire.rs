@@ -23,3 +23,5 @@ pub static USERS_ADD_USER: Lazy<Url> = Lazy::new(|| API_URL.join("/users/add-use
 pub static REFRESH_TIME: u64 = 2;
 
 pub static DATE_COLOR: Lazy<iced::Color> = Lazy::new(|| iced::Color::from_rgb(0.6, 0.6, 0.6));
+
+pub const MAX_FILESIZE: u64 = 67_108_864;

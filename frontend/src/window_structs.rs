@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use common_lib::{encryption::Key, GetInvites, GetMessage};
 
 use crate::main_window::Message;
@@ -54,4 +56,5 @@ pub struct MessagingData {
     pub current_message: String,
     pub key: Option<rsa::RsaPrivateKey>,
     pub chat_key: Key,
+    pub attachments: Vec<PathBuf>,
 }
