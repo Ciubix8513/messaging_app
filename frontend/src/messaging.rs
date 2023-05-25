@@ -92,7 +92,25 @@ impl MainForm {
                     let uname = text(&i.username);
                     let date = text(i.sent_at).style(*grimoire::DATE_COLOR);
                     let body = text(&i.message_text);
-                    container(column![row![uname, date].spacing(5), body])
+                    let files = {
+                        i.files
+                            .iter()
+                            .map(|f| {
+                                button(text(&f.filename))
+                                    .style(iced::theme::Button::Secondary)
+                                    .on_press(Message::ClickFile(f.file_id))
+                            })
+                            .fold(Row::new(), Row::push)
+                            .spacing(5)
+                            .padding(Padding {
+                                right: 20.0,
+                                bottom: 10.0,
+                                left: 0.0,
+                                top: 0.0,
+                            })
+                    };
+                    let files = scrollable(files).horizontal_scroll(scrollable::Properties::new());
+                    container(column![row![uname, date].spacing(5), body, files])
                 })
                 .fold(Column::new(), Column::push)
                 .spacing(10)
