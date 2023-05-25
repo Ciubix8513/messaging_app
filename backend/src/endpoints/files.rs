@@ -1,4 +1,4 @@
-use std::{io::Write, path::PathBuf, println};
+use std::{io::Write, path::PathBuf};
 
 use actix_multipart::Multipart;
 use actix_web::{get, http::header::ContentDisposition, post, web, HttpResponse, Responder};
@@ -36,7 +36,6 @@ pub async fn upload_file(
     let mut got_metadata = false;
     let mut msg_id = 0;
     while let Some(item) = payload.next().await {
-        println!("Got an item");
         let mut field = item.unwrap();
 
         //First item has to be the metadata
@@ -80,9 +79,9 @@ pub async fn upload_file(
                     }
                     //Get id of the message, bc I can't know it before doing the insert
                     msg_id = messages
-                        .filter(sent_at.eq(time))
-                        .filter(user_id.eq(u_id))
                         .filter(chat_id.eq(m_data.chat_id))
+                        .filter(user_id.eq(u_id))
+                        .order_by(sent_at.desc())
                         .select(message_id)
                         .first(connection)
                         .unwrap();
@@ -101,9 +100,9 @@ pub async fn upload_file(
         //unlikely so we're not gonna bother with it
         let path = grimoire::FILE_LOCATION
             .clone()
-            .join(generate_uuid().to_string());
+            .join(format!("./{}", generate_uuid()));
         //Receive the file
-        let mut file = tempfile::NamedTempFile::new().unwrap();
+        let mut file = tempfile::NamedTempFile::new_in(grimoire::FILE_LOCATION.clone()).unwrap();
         while let Some(chunk) = field.try_next().await.unwrap() {
             file.write_all(&chunk).unwrap();
         }
