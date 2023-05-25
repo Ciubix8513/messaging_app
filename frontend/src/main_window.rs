@@ -1,6 +1,5 @@
 #![allow(clippy::enum_variant_names)]
 use std::{
-    os::unix::prelude::MetadataExt,
     path::PathBuf,
     time::{Duration, Instant},
 };
@@ -59,7 +58,7 @@ pub enum Message {
     RefreshMessages(Instant),
     AttachFile,
     RemoveFile(PathBuf),
-    ClickFile(i32),
+    ClickFile(i32, String),
 }
 
 pub static SCROLLABLE_ID: Lazy<scrollable::Id> = Lazy::new(scrollable::Id::unique);
@@ -172,7 +171,7 @@ impl Application for MainForm {
                 let mut is_over = false;
                 //Discard all files
                 let files = files.iter().cloned().filter(|i| {
-                    let over = std::fs::metadata(i).unwrap().size() > grimoire::MAX_FILESIZE;
+                    let over = std::fs::metadata(i).unwrap().len() > grimoire::MAX_FILESIZE;
                     is_over = over || is_over;
                     !over
                 });
@@ -182,7 +181,7 @@ impl Application for MainForm {
                     self.messaging_data.show_error_modal = true;
                 }
             }
-            Message::ClickFile(_) => todo!(),
+            Message::ClickFile(id, f) => self.download_file(id, &f),
             Message::RemoveFile(f) => self.messaging_data.attachments.retain(|i| i != &f),
         }
         Command::none()
@@ -209,6 +208,7 @@ impl Application for MainForm {
         {
             return Subscription::none();
         }
+
         iced::time::every(Duration::from_secs(grimoire::REFRESH_TIME)).map(Message::RefreshMessages)
     }
 

@@ -40,7 +40,7 @@ fn get_cookie_store_mutex() -> reqwest_cookie_store::CookieStoreMutex {
 }
 pub static CLIENT: Lazy<Arc<Mutex<Option<blocking::Client>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
-pub static ASYNC_CLIENT: Lazy<Arc<Mutex<Option<reqwest::Client>>>> =
+pub static ADDITIONAL_CLIENT: Lazy<Arc<Mutex<Option<blocking::Client>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 pub static COOKIE_STORE: Lazy<Arc<reqwest_cookie_store::CookieStoreMutex>> =
     Lazy::new(|| Arc::new(get_cookie_store_mutex()));
@@ -57,8 +57,8 @@ fn main() -> Result<(), iced::Error> {
             .build()
             .unwrap(),
     );
-    *ASYNC_CLIENT.lock().unwrap() = Some(
-        reqwest::Client::builder()
+    *ADDITIONAL_CLIENT.lock().unwrap() = Some(
+        blocking::Client::builder()
             .user_agent(concat!(
                 "messenger_app frontend / ",
                 env!("CARGO_PKG_VERSION")

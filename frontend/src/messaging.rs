@@ -98,7 +98,7 @@ impl MainForm {
                             .map(|f| {
                                 button(text(&f.filename))
                                     .style(iced::theme::Button::Secondary)
-                                    .on_press(Message::ClickFile(f.file_id))
+                                    .on_press(Message::ClickFile(f.file_id, f.filename.clone()))
                             })
                             .fold(Row::new(), Row::push)
                             .spacing(5)
