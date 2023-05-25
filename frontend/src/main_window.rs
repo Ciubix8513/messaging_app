@@ -71,6 +71,7 @@ impl Application for MainForm {
         String::from("Login")
     }
 
+    #[allow(clippy::too_many_lines)]
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
             //Login stuff
@@ -147,7 +148,11 @@ impl Application for MainForm {
             }
             Message::MessageEdited(val) => self.messaging_data.current_message = val,
             Message::SendMessage => {
-                self.send_message();
+                if self.messaging_data.attachments.is_empty() {
+                    self.send_message();
+                } else {
+                    self.upload_files();
+                }
                 return scrollable::snap_to(SCROLLABLE_ID.clone(), scrollable::RelativeOffset::END);
             }
             Message::RefreshMessages(..) => {

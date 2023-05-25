@@ -1,4 +1,6 @@
-#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::missing_panics_doc, clippy::missing_errors_doc)]
+use std::path::PathBuf;
+
 use aes::{
     cipher::{
         generic_array::GenericArray, inout::InOutBuf, BlockDecrypt, BlockEncrypt, BlockSizeUser,
@@ -120,6 +122,15 @@ pub fn decrypt_base64_to_string(encrypted_base64: &str, encryption_key: &Key) ->
 pub fn encrypt_string_to_base64(string: &str, encryption_key: &Key) -> String {
     let data = encrypt_data(encryption_key, string.as_bytes());
     ENCODING_ENGINE.encode(data)
+}
+
+//Returns a err if there are any errors while reading the file
+pub fn read_and_encrypt_file(
+    path: &PathBuf,
+    encryption_key: &Key,
+) -> Result<Vec<u8>, std::io::Error> {
+    let file = std::fs::read(path)?;
+    Ok(encrypt_data(encryption_key, &file))
 }
 
 #[test]
