@@ -11,6 +11,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    files (id) {
+        id -> Integer,
+        filename -> Varchar,
+        path -> Varchar,
+        message_id -> Integer,
+    }
+}
+
+diesel::table! {
     group_chat_members (chat_id, user_id) {
         chat_id -> Integer,
         user_id -> Integer,
@@ -47,6 +56,7 @@ diesel::table! {
 }
 
 diesel::joinable!(chat_invites -> group_chats (chat_id));
+diesel::joinable!(files -> messages (message_id));
 diesel::joinable!(group_chat_members -> group_chats (chat_id));
 diesel::joinable!(group_chat_members -> users (user_id));
 diesel::joinable!(group_chats -> users (created_by));
@@ -55,6 +65,7 @@ diesel::joinable!(messages -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     chat_invites,
+    files,
     group_chat_members,
     group_chats,
     messages,

@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use chrono::{Local, NaiveDateTime};
-use common_lib::{GetMessage, SendMessage};
+use common_lib::{GetFile, GetMessage, SendMessage};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde_derive::Deserialize;
 
@@ -98,18 +98,38 @@ pub async fn get_messages(
             .load(connection);
         match result {
             Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
-            Ok(values) => HttpResponse::Ok().json(
-                values
-                    .iter()
-                    .map(|val| GetMessage {
-                        message_id: val.0,
-                        user_id: val.1,
-                        username: val.2.clone(),
-                        message_text: val.3.clone(),
-                        sent_at: val.4,
-                    })
-                    .collect::<Vec<_>>(),
-            ),
+            Ok(values) => {
+                use crate::schema::files::dsl as f;
+                let result: Vec<(i32, i32, String)> = f::files
+                    .inner_join(msg::messages)
+                    .filter(msg::chat_id.eq(param.id))
+                    .select((f::message_id, f::id, f::filename))
+                    .load(connection)
+                    .unwrap();
+
+                let it = result.iter();
+
+                HttpResponse::Ok().json(
+                    values
+                        .iter()
+                        .map(|val| GetMessage {
+                            message_id: val.0,
+                            user_id: val.1,
+                            username: val.2.clone(),
+                            message_text: val.3.clone(),
+                            sent_at: val.4,
+                            files: it
+                                .clone()
+                                .filter(|i| i.0 == val.0)
+                                .map(|i| GetFile {
+                                    file_id: i.1,
+                                    filename: i.2.clone(),
+                                })
+                                .collect(),
+                        })
+                        .collect::<Vec<_>>(),
+                )
+            }
         }
     }
 }

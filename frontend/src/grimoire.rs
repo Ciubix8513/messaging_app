@@ -20,6 +20,11 @@ pub static MESSAGES_SEND: Lazy<Url> = Lazy::new(|| API_URL.join("/messages/send"
 pub static MESSAGES_GET: Lazy<Url> = Lazy::new(|| API_URL.join("/messages/get").unwrap());
 pub static USERS_ADD_USER: Lazy<Url> = Lazy::new(|| API_URL.join("/users/add-user").unwrap());
 
+pub static FILES_UPLOAD: Lazy<Url> = Lazy::new(|| API_URL.join("/files/upload").unwrap());
+pub static FILES_DOWNLOAD: Lazy<Url> = Lazy::new(|| API_URL.join("/files/download").unwrap());
+
 pub static REFRESH_TIME: u64 = 2;
 
 pub static DATE_COLOR: Lazy<iced::Color> = Lazy::new(|| iced::Color::from_rgb(0.6, 0.6, 0.6));
+
+pub const MAX_FILESIZE: u64 = 67_108_864;

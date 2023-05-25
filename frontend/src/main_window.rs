@@ -1,5 +1,8 @@
 #![allow(clippy::enum_variant_names)]
-use std::time::{Duration, Instant};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use crate::{
     grimoire,
@@ -53,6 +56,9 @@ pub enum Message {
     MessageEdited(String),
     SendMessage,
     RefreshMessages(Instant),
+    AttachFile,
+    RemoveFile(PathBuf),
+    ClickFile(i32, String),
 }
 
 pub static SCROLLABLE_ID: Lazy<scrollable::Id> = Lazy::new(scrollable::Id::unique);
@@ -64,6 +70,7 @@ impl Application for MainForm {
         String::from("Login")
     }
 
+    #[allow(clippy::too_many_lines)]
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
             //Login stuff
@@ -140,7 +147,11 @@ impl Application for MainForm {
             }
             Message::MessageEdited(val) => self.messaging_data.current_message = val,
             Message::SendMessage => {
-                self.send_message();
+                if self.messaging_data.attachments.is_empty() {
+                    self.send_message();
+                } else {
+                    self.upload_files();
+                }
                 return scrollable::snap_to(SCROLLABLE_ID.clone(), scrollable::RelativeOffset::END);
             }
             Message::RefreshMessages(..) => {
@@ -151,6 +162,27 @@ impl Application for MainForm {
                     );
                 }
             }
+            Message::AttachFile => {
+                let files = rfd::FileDialog::new().pick_files();
+                if files.is_none() {
+                    return Command::none();
+                }
+                let files = files.unwrap();
+                let mut is_over = false;
+                //Discard all files
+                let files = files.iter().cloned().filter(|i| {
+                    let over = std::fs::metadata(i).unwrap().len() > grimoire::MAX_FILESIZE;
+                    is_over = over || is_over;
+                    !over
+                });
+                self.messaging_data.attachments = files.collect();
+                if is_over {
+                    self.messaging_data.error_message = "Files must be under 64 MB".to_string();
+                    self.messaging_data.show_error_modal = true;
+                }
+            }
+            Message::ClickFile(id, f) => self.download_file(id, &f),
+            Message::RemoveFile(f) => self.messaging_data.attachments.retain(|i| i != &f),
         }
         Command::none()
     }
@@ -176,6 +208,7 @@ impl Application for MainForm {
         {
             return Subscription::none();
         }
+
         iced::time::every(Duration::from_secs(grimoire::REFRESH_TIME)).map(Message::RefreshMessages)
     }
 

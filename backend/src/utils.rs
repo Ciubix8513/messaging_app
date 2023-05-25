@@ -4,6 +4,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
 };
 use password_hash::{rand_core::OsRng, SaltString};
+use rand::Rng;
 use std::env;
 
 use crate::grimoire;
@@ -30,4 +31,9 @@ pub fn hash_password(password: &str) -> String {
         .hash_password(password.as_bytes(), salt.as_salt())
         .unwrap()
         .to_string()
+}
+
+pub fn generate_uuid() -> u128 {
+    let mut rng = rand::thread_rng();
+    rng.gen()
 }

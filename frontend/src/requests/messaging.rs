@@ -96,6 +96,7 @@ impl MainForm {
                     &self.messaging_data.chat_key,
                 ),
                 sent_at: naive_utc_to_naive_local(&i.sent_at),
+                files: i.files.clone(),
             });
         self.messaging_data.messages.append(&mut new.collect());
 

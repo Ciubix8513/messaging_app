@@ -66,6 +66,7 @@ pub struct CreateChat {
     pub chat_name: String,
     pub created_at: chrono::NaiveDateTime,
     pub created_by: i32,
+    pub key: String,
 }
 
 #[derive(Insertable)]
@@ -75,4 +76,12 @@ pub struct CreateMessage {
     pub user_id: i32,
     pub message_text: String,
     pub sent_at: chrono::NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name=files)]
+pub struct CreateFile {
+    pub message_id: i32,
+    pub filename: String,
+    pub path: String,
 }

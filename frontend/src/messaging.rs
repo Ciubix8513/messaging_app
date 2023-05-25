@@ -1,7 +1,7 @@
 use iced::{
     alignment::{self, Horizontal},
     theme::Container,
-    widget::{button, column, container, row, scrollable, text, text_input, Column},
+    widget::{button, column, container, row, scrollable, text, text_input, Column, Row},
     Color, Length, Padding,
 };
 use iced_aw::{Card, Modal};
@@ -81,50 +81,88 @@ impl MainForm {
     }
 
     fn messaging_view_mode(&self) -> iced::widget::Container<'_, Message> {
-        if self.messaging_data.selected_chat.is_some() {
-            container(
-                column![
-                    scrollable(
-                        self.messaging_data
-                            .messages
+        if self.messaging_data.selected_chat.is_none() {
+            return container(text(""));
+        }
+        let messages = scrollable(
+            self.messaging_data
+                .messages
+                .iter()
+                .map(|i| {
+                    let uname = text(&i.username);
+                    let date = text(i.sent_at).style(*grimoire::DATE_COLOR);
+                    let body = text(&i.message_text);
+                    let files = {
+                        i.files
                             .iter()
-                            .map(|i| {
-                                let uname = text(&i.username);
-                                let date = text(i.sent_at).style(*grimoire::DATE_COLOR);
-                                let body = text(&i.message_text);
-                                container(column![row![uname, date].spacing(5), body])
+                            .map(|f| {
+                                button(text(&f.filename))
+                                    .style(iced::theme::Button::Secondary)
+                                    .on_press(Message::ClickFile(f.file_id, f.filename.clone()))
                             })
-                            .fold(Column::new(), Column::push)
-                            .spacing(10)
+                            .fold(Row::new(), Row::push)
+                            .spacing(5)
                             .padding(Padding {
                                 right: 20.0,
                                 bottom: 10.0,
                                 left: 0.0,
-                                top: 0.0
-                            }),
-                    )
-                    .height(Length::Fill)
-                    .width(Length::Fill)
-                    .id(SCROLLABLE_ID.clone()),
-                    {
-                        let mut input = text_input("...", &self.messaging_data.current_message)
-                            .on_input(Message::MessageEdited);
-                        if !self.messaging_data.current_message.is_empty() {
-                            input = input.on_submit(Message::SendMessage);
-                        }
-                        let mut send_button = button("Send");
-                        if !self.messaging_data.current_message.is_empty() {
-                            send_button = send_button.on_press(Message::SendMessage);
-                        }
-                        row![input, send_button].spacing(5)
-                    }
-                ]
-                .spacing(2),
-            )
-        } else {
-            //Kinda hacky but it's fine
-            container(text(""))
+                                top: 0.0,
+                            })
+                    };
+                    let files = scrollable(files).horizontal_scroll(scrollable::Properties::new());
+                    container(column![row![uname, date].spacing(5), body, files])
+                })
+                .fold(Column::new(), Column::push)
+                .spacing(10)
+                .padding(Padding {
+                    right: 20.0,
+                    bottom: 10.0,
+                    left: 0.0,
+                    top: 0.0,
+                }),
+        )
+        .height(Length::Fill)
+        .width(Length::Fill)
+        .id(SCROLLABLE_ID.clone());
+
+        let mut input = text_input("...", &self.messaging_data.current_message)
+            .on_input(Message::MessageEdited);
+        if !self.messaging_data.current_message.is_empty() {
+            input = input.on_submit(Message::SendMessage);
         }
+        let mut send_button = button("Send");
+        if !self.messaging_data.current_message.is_empty() {
+            send_button = send_button.on_press(Message::SendMessage);
+        }
+        let attach_button = button(" + ").on_press(Message::AttachFile);
+
+        let bottom_bar = row![attach_button, input, send_button].spacing(5);
+
+        let attachment = scrollable(
+            self.messaging_data
+                .attachments
+                .iter()
+                .map(|i| {
+                    let t = text(i.file_name().unwrap().to_str().unwrap());
+                    let remove = button("x").on_press(Message::RemoveFile(i.clone()));
+                    container(
+                        row![t.vertical_alignment(alignment::Vertical::Center), remove].spacing(2),
+                    )
+                    .style(Container::Box)
+                })
+                .fold(Row::new(), Row::push)
+                .spacing(4)
+                .padding(Padding {
+                    bottom: 10.0,
+                    top: 0.0,
+                    right: 0.0,
+                    left: 0.0,
+                }),
+        )
+        .horizontal_scroll(scrollable::Properties::new());
+
+        let content = column![messages, attachment, bottom_bar].spacing(2);
+        container(content)
     }
 
     fn invites_view_mode(&self) -> iced::widget::Container<'_, Message> {
